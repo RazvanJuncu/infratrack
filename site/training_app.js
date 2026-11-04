@@ -106,6 +106,7 @@ $("submitLabel").addEventListener("click",()=>{
  const payload={
    study_id:packageData.study_id,signature:packageData.signature,
    row:verifiedTarget.row,col:verifiedTarget.col,label,site_group,
+   question_version:"change-types-v2",
    evidence_url,evidence_date,note,attestation:true
  };
  const block=String.fromCharCode(96).repeat(3);
