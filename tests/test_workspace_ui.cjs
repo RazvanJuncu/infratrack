@@ -79,3 +79,31 @@ test('UI references exist in v0.9 HTML',()=>{
  assert.match(html,/id="removeDrop"/);
  assert.match(html,/id="compareRange"/);
 });
+
+
+test('RGBA highlighting accepts real 8-bit buffers without depending on realm-specific constructor',async()=>{
+ const src={width:2,height:2,rgba:new Uint8Array(16)};
+ src.rgba.set([120,50,60,255],0);
+ const pixels=await core.alignedRGBA(src,()=>{throw Error('Should not decode image')});
+ assert.ok(pixels instanceof Uint8ClampedArray);
+ assert.equal(pixels.length,16);
+ assert.equal(pixels[0],120);
+});
+test('highlight reconstructs exact aligned bytes from an existing data PNG if raw buffer was omitted',async()=>{
+ const expected=new Uint8ClampedArray([25,40,50,255,100,100,110,255,0,0,0,255,150,140,130,255]);
+ const scene={width:2,height:2,image:'data:image/png;base64,fixture'};
+ let used=false;
+ const decoded=await core.alignedRGBA(scene,async (image,w,h)=>{
+   assert.equal(image,scene.image);assert.equal(w,2);assert.equal(h,2);
+   used=true;return expected;
+ });
+ assert.equal(used,true);
+ assert.deepEqual([...decoded],[...expected]);
+ const compared=core.rgbDifference(decoded,decoded,48);
+ assert.equal(compared.changed,0);
+});
+test('invalid preview bytes and dimension mismatch remain hard failures',async()=>{
+ await assert.rejects(core.alignedRGBA({width:3,height:3,rgba:[1,2,3]},null),/unavailable|dimensions|backup/);
+ await assert.rejects(core.alignedRGBA({width:2,height:2,image:'data:image/png;base64,a'},
+   async()=>new Uint8ClampedArray(3)),/dimensions/);
+});
