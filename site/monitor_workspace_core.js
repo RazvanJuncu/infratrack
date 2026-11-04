@@ -133,7 +133,7 @@ function parsePayload(text,areaId){
 async function alignedRGBA(scene,decodeImage){
  const width=Number(scene?.width),height=Number(scene?.height);
  if(!Number.isInteger(width)||!Number.isInteger(height)||
-    width<8||height<8||width>2048||height>2048)
+    width<1||height<1||width>2048||height>2048)
    throw Error("Satellite crop dimensions are unavailable");
  const expected=width*height*4;
  const data=scene?.rgba;
