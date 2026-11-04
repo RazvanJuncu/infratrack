@@ -113,10 +113,11 @@ async function renderMap(data){
  study.bindPopup('Research AOI 2 × 2 km · NOT entire Lot 3');
  let overlay=L.imageOverlay('corridor_changes.png',bounds,{opacity:.85,interactive:false});
  let routeLoaded=false;
+ let geo={features:[]};
  try{
     const response=await fetch('corridor.geojson',{cache:'no-store'});
     if(!response.ok)throw Error('OSM geometry unavailable');
-    const geo=await response.json();
+    geo=await response.json();
     if(geo.features?.length){
       const route=L.geoJSON(geo,{style:{color:'#46e4c3',weight:5,opacity:.95},
         onEachFeature:(feature,layer)=>layer.bindPopup('Mapped A0 Lot 3 · OSM way '+feature.properties?.osm_way_id+' · NOT an official survey')}).addTo(map);
@@ -125,7 +126,7 @@ async function renderMap(data){
       routeLoaded=true;
     }else map.fitBounds(study.getBounds());
  }catch(err){map.fitBounds(study.getBounds());console.warn(err)}
- el('mapStatus').textContent=routeLoaded?'Mapped A0 road geometry · research only':'No verified mapped road geometry';
+ el('mapStatus').textContent=routeLoaded?(geo.features.length+' OSM way(s) · research geometry, not official alignment'):'Mapped geometry unavailable';
  const toggle=L.control({position:'topright'});
  toggle.onAdd=function(){
    const div=L.DomUtil.create('div','leaflet-bar');
