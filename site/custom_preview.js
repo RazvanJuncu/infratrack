@@ -80,7 +80,8 @@ async function previewOne(item,area,GeoTIFF,proj4,signal){
  const im=await tiff.getImage(0);
  let epsg=Number(item?.assets?.visual?.["proj:epsg"]||
                  item?.properties?.["proj:epsg"]||
-                 im.getGeoKeys()?.ProjectedCSTypeGeoKey);
+                 im.getGeoKeys?.()?.ProjectedCSTypeGeoKey||
+                 im.geoKeys?.ProjectedCSTypeGeoKey);
  if(!isUTM(epsg))throw Error("Unrecognized UTM CRS");
  const bbox=projectedBounds(area,epsg,proj4);
  const window=pixelWindow(im,bbox);
@@ -116,7 +117,8 @@ async function previewOne(item,area,GeoTIFF,proj4,signal){
      const sclImage=await sclTiff.getImage(0);
      const sclProjection=Number(item?.assets?.scl?.["proj:epsg"]||
        item?.properties?.["proj:epsg"]||
-       sclImage.getGeoKeys()?.ProjectedCSTypeGeoKey);
+       sclImage.getGeoKeys?.()?.ProjectedCSTypeGeoKey||
+       sclImage.geoKeys?.ProjectedCSTypeGeoKey);
      const sclBounds=projectedBounds(area,sclProjection,proj4);
      pixelWindow(sclImage,sclBounds);
      const sample=await sclTiff.readRasters({
