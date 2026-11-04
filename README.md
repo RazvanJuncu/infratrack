@@ -1,10 +1,10 @@
 # 🛰️ InfraTrack · Earth Observation Alpha
 
-## Current product layout
+## Current product layout (v0.8+)
 
-- **[Explore](https://razvanjuncu.github.io/infratrack/)** — minimal location selector, original Sentinel-2 before/after images, optional map. No spectral chart or labeling form on the main page.
-- **[Training](https://razvanjuncu.github.io/infratrack/training.html)** — separate, simple four-button review for the selected site. Previous/Next/Undo and local-only provisional drafts; *Verify* reveals evidence fields only when deliberately requested.
-- **[Technical](https://razvanjuncu.github.io/infratrack/technical.html)** — preserved long-form research prototype, NDVI timelines and screening diagnostics for the original A0 anchor study.
+- **[Monitor](https://razvanjuncu.github.io/infratrack/)** — public Sentinel-2 STAC observations, browser-saved Europe-wide custom 2 km areas, and **on-demand real RGB before/after GeoTIFF crops for custom areas** using GeoTIFF.js / proj4. The 5 registered sites also publish cloud-screened, server-processed comparisons. Custom areas are not processed server-side or monitored in the background. The image preview depends on COG availability, CORS and locally usable scenes, and reports failures rather than fabricating photos.
+- **[Training](https://razvanjuncu.github.io/infratrack/training.html)** — separate two-question review of *recent significant spectral changes*: apparent type of change and confidence. Drafts stay local and are not used as training truth.
+- **[Technical](https://razvanjuncu.github.io/infratrack/technical.html)** — current multi-region dashboard with recent scene IDs, observation dates, local clear overlap, unverified change scores, ground-truth validation state and published source files. The original A0-only prototype is archived at **[technical-legacy.html](https://razvanjuncu.github.io/infratrack/technical-legacy.html)**.
 
 ## Multi-area portfolio (v0.7)
 
@@ -142,3 +142,7 @@ Because earlier review rounds were collected under an ambiguous land-use/change 
 - A later phase must safely support server-side processing of arbitrary user AOIs, automated verified labels, geographic holdout and server-side alert delivery. **Do not conflate the metadata-only personal watchlist with such a production service.**
 
 Sentinel-2 nominal satellite revisit is ~5 days at the equator, generally more frequent at European latitudes, but visible cloud-free observations can be much farther apart. We process only when usable actual scenes exist.
+
+### On-demand custom-area imagery (fix for empty Recent satellite comparison)
+
+Previous Monitor versions intentionally showed only acquisition dates for a user-saved area, leaving its Before/After comparison blank; this conflicted with the Monitor product goal. Custom areas now attempt to read two distinct, sufficiently recent Sentinel-2 `visual` Cloud-Optimized GeoTIFFs, crop the true-color pixels to the selected 2 × 2 km square in browser JavaScript, and optionally screen local `scl` cloud/land-cover quality. The renderer uses public AWS COG assets; it cannot promise two clear observations, and it shows explicit errors for unavailable CDN scripts, missing visual COGs, incorrect coverage, Cloud Optimized GeoTIFF read/CORS failures, or clouds. This is on-demand **visual comparison**, not a background change alert or construction classifier. The site always retains the public STAC acquisition list and a 180-day date-range option.
