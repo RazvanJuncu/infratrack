@@ -1,0 +1,17 @@
+name: InfraTrack candidate road geometry discovery
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/discover_regions.py
+      - .github/workflows/discover-regions.yml
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - run: python scripts/discover_regions.py
