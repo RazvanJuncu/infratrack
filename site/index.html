@@ -366,7 +366,7 @@ el('submitLabel').addEventListener('click',()=>{
    note:note,attestation:true
  };
  const ticks=String.fromCharCode(96).repeat(3);
- const body='Source-backed research annotation, owner attested; not independently audited.\\n\\n'+ticks+'infratrack-label\\n'+JSON.stringify(annotation,null,2)+'\\n'+ticks+'\\n\\nPlease verify date and independent evidence.';
+ const body='Source-backed research annotation, owner attested; not independently audited.\n\n'+ticks+'infratrack-label\n'+JSON.stringify(annotation,null,2)+'\n'+ticks+'\n\nPlease verify date and independent evidence.';
  const title='[InfraTrack label] '+cls+' '+site+' pixel '+chosenSample.row+','+chosenSample.col;
  const issueUrl=new URL('https://github.com/RazvanJuncu/infratrack/issues/new');
  issueUrl.searchParams.set('title',title);issueUrl.searchParams.set('body',body);
