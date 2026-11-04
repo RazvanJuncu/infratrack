@@ -13,6 +13,7 @@ import rasterio
 from rasterio.vrt import WarpedVRT
 from rasterio.enums import Resampling
 from rasterio.transform import from_origin
+from corridor_osm import fetch_route, corridor_raster, aoi_bounds, ndvi_profile
 
 STAC = "https://earth-search.aws.element84.com/v1/search"
 COLLECTION = "sentinel-2-c1-l2a"
@@ -171,8 +172,8 @@ def layered_preview(base_image, classification):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--lat", type=float, default=44.5128)
-    parser.add_argument("--lon", type=float, default=26.2795)
+    parser.add_argument("--lat", type=float, default=44.5065)
+    parser.add_argument("--lon", type=float, default=26.2328)
     parser.add_argument("--size-km", type=float, default=2)
     parser.add_argument("--before", default="2023-06-01/2023-08-31")
     parser.add_argument("--after", default="2025-06-01/2025-08-31")
@@ -187,6 +188,13 @@ def main():
     t = Transformer.from_crs("EPSG:4326", "EPSG:32635", always_xy=True)
     x, y = t.transform(args.lon, args.lat)
     transform = from_origin(x - metres / 2, y + metres / 2, resolution, resolution)
+    print("Fetching OSM-mapped A0 Nord Lot 3 corridor geometry...",flush=True)
+    route, route_source = fetch_route()
+    corridor = corridor_raster(route,transform,pixels)
+    if not corridor.any():
+        print("WARNING: No A0 mapped way intersects the study AOI; NOT assessing infrastructure changes",flush=True)
+    else:
+        print(f"OSM road-buffer study coverage: {corridor.sum()*resolution*resolution/10000:.2f} ha",flush=True)
     print("Searching real Sentinel-2 STAC scenes...", flush=True)
     a, before, scl0 = select_scene(args.lat, args.lon, metres, pixels, args.before, args.max_cloud, transform)
     b, after, scl1 = select_scene(args.lat, args.lon, metres, pixels, args.after, args.max_cloud, transform)
@@ -195,7 +203,34 @@ def main():
     worldcover, wc_url = read_worldcover(args.lat, args.lon, transform, pixels)
     c, followup, scl2 = select_scene(args.lat, args.lon, metres, pixels, args.followup,
                                      args.max_cloud, transform)
-    analysis = interpret_landcover(mask, clear, worldcover, followup, scl2)
+    corridor_change = mask & corridor
+    analysis = interpret_landcover(corridor_change, clear, worldcover, followup, scl2)
+    # A five-year same-season profile, with missing observations recorded explicitly.
+    series=[]
+    for year in (2022,2023,2024,2025,2026):
+        if year == 2023:
+            item, bands, scl = a, before, scl0
+        elif year == 2025:
+            item, bands, scl = b, after, scl1
+        elif year == 2026:
+            item, bands, scl = c, followup, scl2
+        else:
+            try:
+                period=f"{year}-06-01/{year}-09-30"
+                item,bands,scl=select_scene(args.lat,args.lon,metres,pixels,period,
+                                             args.max_cloud,transform)
+            except Exception as error:
+                print(f"Temporal observation unavailable for {year}: {error}",flush=True)
+                series.append({"year":year,"date":None,"corridor_ndvi":None,
+                               "control_ndvi":None,"scene_id":None})
+                continue
+        if corridor.any():
+            on=ndvi_profile(bands,corridor,scl)
+            off=ndvi_profile(bands,~corridor,scl)
+        else:
+            on,off=None,None
+        series.append({"year":year,"date":item["properties"]["datetime"][:10],
+                       "corridor_ndvi":on,"control_ndvi":off,"scene_id":item["id"]})
 
     if clear.mean() < .45:
         raise RuntimeError(f"Only {clear.mean():.1%} pixels clear in BOTH scenes, unusable comparison")
@@ -205,16 +240,31 @@ def main():
     marked = img1.copy()
     marked[mask] = (.40 * marked[mask] + .60 * np.array([255, 68, 87])).astype(np.uint8)
     interpreted = layered_preview(img1, analysis)
+    outlined=img1.copy()
+    outlined[corridor_change] = (.30 * outlined[corridor_change] + .70 * np.array([47,224,192])).astype(np.uint8)
+    overlay=np.zeros((pixels,pixels,4),dtype=np.uint8)
+    overlay[corridor_change]=np.array([50,234,205,204],dtype=np.uint8)
+    Image.fromarray(overlay,"RGBA").save(output/"corridor_changes.png",optimize=True)
+    (output/"corridor.geojson").write_text(json.dumps(route,ensure_ascii=False),encoding="utf-8")
     for name, image in [("before.png", img0), ("after.png", img1),
-                        ("candidates.png", marked), ("interpreted.png", interpreted)]:
+                        ("candidates.png", marked), ("interpreted.png", interpreted),
+                        ("corridor_preview.png",outlined)]:
         Image.fromarray(image, "RGB").save(output / name, optimize=True)
     result = {
         "status": "ready",
         "mode": "REAL_SENTINEL_2",
         "title": "A0 Nord · Afumați–Pantelimon",
         "warning": "Spectral-change candidates; NOT validated construction, earthworks, or project completion.",
-        "area_note": "Provisional 2 km research AOI; alignment with exact A0 corridor not yet confirmed.",
-        "site": {"lat": args.lat, "lon": args.lon, "size_km": args.size_km},
+        "area_note": "2 km study window centered on OSM-mapped A0 Lot 3. Mapped route is not an authoritative construction survey. Entire 8.6 km lot is NOT analyzed.",
+        "site": {"lat": args.lat, "lon": args.lon, "size_km": args.size_km,
+                 "bounds": aoi_bounds(args.lon,args.lat,metres)},
+        "corridor": {"status":"mapped_osm" if corridor.any() else "unavailable",
+                     "source":route_source,"buffer_m":130,
+                     "mapped_way_count":len(route["features"]),
+                     "study_hectares":round(float(corridor.sum())/100,2),
+                     "candidate_hectares":round(float(corridor_change.sum())/100,2),
+                     "confidence":"Mapped OSM alignment, not independently verified survey"},
+        "temporal": series,
         "before": {"date": a["properties"]["datetime"][:10], "id": a["id"],
                    "cloud_percent_scene": a["properties"].get("eo:cloud_cover")},
         "after": {"date": b["properties"]["datetime"][:10], "id": b["id"],
@@ -235,7 +285,8 @@ def main():
         },
         "source": "Element 84 Earth Search · Copernicus Sentinel-2 Level-2A",
         "source_api": "https://earth-search.aws.element84.com/v1",
-        "images": ["before.png", "after.png", "candidates.png", "interpreted.png"]
+        "images": ["before.png", "after.png", "candidates.png", "interpreted.png",
+                   "corridor_preview.png","corridor_changes.png"]
     }
     (output / "data.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
