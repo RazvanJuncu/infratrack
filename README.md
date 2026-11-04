@@ -1,5 +1,26 @@
 # 🛰️ InfraTrack · Earth Observation Alpha
 
+## Current product layout
+
+- **[Explore](https://razvanjuncu.github.io/infratrack/)** — minimal location selector, original Sentinel-2 before/after images, optional map. No spectral chart or labeling form on the main page.
+- **[Training](https://razvanjuncu.github.io/infratrack/training.html)** — separate, simple four-button review for the selected site. Previous/Next/Undo and local-only provisional drafts; *Verify* reveals evidence fields only when deliberately requested.
+- **[Technical](https://razvanjuncu.github.io/infratrack/technical.html)** — preserved long-form research prototype, NDVI timelines and screening diagnostics for the original A0 anchor study.
+
+## Multi-area portfolio (v0.7)
+
+`projects/regions.json` now declares **five independently centered 2 × 2 km study windows** on OSM-mapped motorway ways:
+
+1. A0 Nord lot 3 near DN2 (original anchor);
+2. A0 Sud Bragadiru/DN6;
+3. A7 near Râmnicu Sărat (south);
+4. A7 near Râmnicu Sărat (north; separate observation window);
+5. A1 Tigveni–Curtea de Argeș (selected OSM motorway way).
+
+GitHub Actions attempts to process **four real Sentinel scenes per window**: summer 2023, summer 2025, spring 2026, summer 2026. Each window has distinct images, date/source IDs, spectra, review queue, and independent `features_v05.npz`. No AI-generated imagery. If remote satellite/OSM sources fail for a window, its status in `site/projects.json` is **unavailable**, not a fictional demonstration. These are only small samples around mapped roadways, NOT coverage of full motorway projects or Romania. Four additional areas are first-stage sampling; the architecture supports adding more registry entries. Repeated observations can incur GitHub Actions resource costs/limits even without a paid AI API.
+
+Do not infer percentage complete or classify all spectral changes as construction. The candidate queue is unverified; rapid clicks stay local to the browser and do not train a model. The model is still blocked on independently sourced ground-truth labels and geographically separated evaluation. 10 m multispectral pixels cannot distinguish every kind of civil engineering work.
+
+
 A real-data satellite change-detection experiment for infrastructure, now centered on a **2 km × 2 km study window intersecting mapped A0 Nord Lot 3 roadways**, not an arbitrary field.
 
 **Live site (after deployment):** https://razvanjuncu.github.io/infratrack/
