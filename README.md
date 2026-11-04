@@ -38,7 +38,7 @@ Python · Rasterio · NumPy · SciPy · PyProj · Pillow · GitHub Actions · Gi
 
 ## Next experiments
 1. Verify the OSM corridor against official alignment files and source-dated on-site imagery.
-2. Calibrate and validate a construction-vs-harvest classifier on independently labeled pixels and sites, with precision/recall, confusion matrix and false-positive examples.
+2. Collect independent, date-specific labels from different sites; only then train a construction-vs-harvest classifier and calculate site-held-out precision/recall and confusion matrix.
 3. Use seasonal repeat imagery to reduce crop false positives; the current NDVI timeline is descriptive, **not** a reliable construction classifier.
 4. Expand from the current 2 km sample to the full 8.6 km lot only after validation.
 5. Add a project watchlist only after measured reliability has been demonstrated.
@@ -56,3 +56,28 @@ An optional, separately validated CPU/ONNX earth-observation model may be added 
 The old demonstration was centered near 44.5128, 26.2795 and largely captured agricultural land away from the motorway. In v0.3 the experimental center is **44.5065, 26.2328**, selected near OSM ways 1517261128/1517261130 and adjacent mapped A0 Lot 3 geometry. All coordinates are research approximations derived from community cartography, not cadastral facts. The base map uses Leaflet and normal on-demand OSM tiles with visible attribution (do not bulk-download tiles). The 130 m road buffer is an analytical choice, not the legal footprint of the project.
 
 **Model honesty:** No neural construction classifier has been integrated yet. ESA WorldCover land-cover classes were generated with ML. Additional multi-year NDVI and the corridor mask are deterministic evidence-based filters. We will not present low vegetation as a confirmed bridge, highway or percentage of work completed.
+
+
+## v0.5 — Validation Lab (research / NOT a validated AI)
+
+The live browser application now supports a **real Sentinel-2 pixel inspector**: on the map select a point inside the 2 km satellite rectangle, or tick "Inspect pixel" below and click the before/after image. It shows NDVI, BSI and NDBI on the four acquired observations, original scene dates and the 2021 WorldCover label for context. The maps measure source pixels on the actual UTM 10 m study grid; SWIR native resolution is 20 m and its resampled readings **do not create extra detail**.
+
+### Sourced data annotation workflow
+
+1. Inspect a pixel **and compare to truly independent dated evidence** (for example, a dated ground-level image, an aerial survey with clear capture date, or an attributable construction progress document that resolves the exact point and period).
+2. Choose exactly one label: \`construction\`, \`agriculture\`, or \`unchanged\`.
+3. Enter a **site group** (same physical location = same group across samples), public evidence URL, evidence date and a concrete rationale; affirm that you checked it.
+4. Click **Create annotation issue on GitHub** and manually submit the prefilled issue. Only issues created by repository owner are imported. No token, local server, or Colab needed.
+5. The \`InfraTrack label intake\` workflow validates the structured issue and commits it to \`labels/reviewed.jsonl\`; it requests a Pages build through GitHub Actions. This automation requires the GitHub repository to allow Issues and Actions write permissions. If organization/repository policies block the write, inspect the workflow logs; no label is silently fabricated.
+
+**Labels are owner-attested and evidence-linked, NOT automatically independently audited.** Their quality must be checked in addition to the mechanics.
+
+### Training and evaluation
+
+\`scripts/train_validation.py\` reads only site-grouped, owner-reviewed labels tied to the *exact four real Sentinel-2 scenes* via a SHA-256 scene signature. It will not train or report accuracy without at least **6 valid labels AND 3 different site groups for EACH of the 3 classes**. The study must include different ground-truth locations, not just adjacent pixels in one field.
+
+When the threshold is reached, a lightweight scikit-learn RandomForest is evaluated by **held-out geographic site groups** and exposes the actual class-wise precision, recall, counts and confusion matrix in \`site/validation_v05.json\` and the UI. These will remain *local experimental metrics*, with **no claim of generalization to other road projects, continents or construction types**. A held-out test may be too small to draw reliable conclusions even after the minimum threshold.
+
+If there aren't enough labels, \`validation_v05.json\` deliberately shows \`needs_labels\` with null accuracy, and **no trained classification overlay** is generated. All displayed v0.4 overlay patches remain heuristic, not a learned construction classification. Synthetic measurements are used in unit tests ONLY, never in the published data or labels.
+
+The GitHub Actions workflow fetches real Sentinel imagery, builds the four-observation pixel featurepack, and evaluates any accepted labels during deployment. Zero paid inference/API requirements; computing time and provider/Actions quotas still apply.
