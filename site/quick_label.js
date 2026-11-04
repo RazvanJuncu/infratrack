@@ -114,10 +114,6 @@
     get("quickUndo").onclick = undo;
     get("quickExport").onclick = exportDrafts;
     get("quickVerify").onclick = verify;
-    get("quickStart").onclick = () => {
-      if (!candidates.length) return;
-      get("quickReview").scrollIntoView({behavior:"smooth",block:"start"});
-    };
 
     function current() { return index >= 0 ? candidates[index] : null; }
 
