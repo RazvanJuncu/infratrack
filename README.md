@@ -81,3 +81,18 @@ When the threshold is reached, a lightweight scikit-learn RandomForest is evalua
 If there aren't enough labels, \`validation_v05.json\` deliberately shows \`needs_labels\` with null accuracy, and **no trained classification overlay** is generated. All displayed v0.4 overlay patches remain heuristic, not a learned construction classification. Synthetic measurements are used in unit tests ONLY, never in the published data or labels.
 
 The GitHub Actions workflow fetches real Sentinel imagery, builds the four-observation pixel featurepack, and evaluates any accepted labels during deployment. Zero paid inference/API requirements; computing time and provider/Actions quotas still apply.
+
+
+## Quick Review — four buttons, no setup (new)
+
+Open the [live InfraTrack site](https://razvanjuncu.github.io/infratrack/) and use **Quick Review**, above the older analysis panels.
+
+1. You see **two cropped windows from the real, sourced Sentinel-2 observations**, both around the same 10 m pixel. This is still satellite-scale data; visual ambiguity is expected.
+2. Choose **Construction**, **Agriculture**, **Unchanged**, or **Unsure / Skip**. The app automatically selects the next unreviewed candidate; Previous, Next, and Undo also work.
+3. Responses are **provisional drafts, stored only in the current browser's localStorage**, scoped to the exact satellite scene signature. They are **not synced to GitHub** and **never used as ground-truth training examples**. You can export a draft JSON backup. A private browser or cleared site data will lose drafts without a backup.
+4. When you have genuinely independent dated evidence (e.g., a source-dated ground photo), go back to that candidate and press **Verify selected draft for AI training**. This reveals the advanced evidence form and preselects the class; submit the GitHub issue manually. The existing owner-only intake validates mandatory evidence before an example is considered for possible training.
+5. If the satellite view is ambiguous, choose **Unsure**. No annotation is verified just because it looks convincing at 10 m resolution.
+
+**Important:** There is no automatic trust promotion. Machine learning only uses the separate \`labels/reviewed.jsonl\` file, populated through the evidence-gated workflow. Even those owner-attested sources are not independently audited. The site still does not claim a working/validated construction detector until sufficiently independent ground-truth samples and held-out evaluation are available.
+
+The four-button logic has no paid services and runs entirely in static JavaScript. Both Python tests and Node built-in tests run on GitHub Actions.
