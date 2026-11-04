@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>InfraTrack — Satellite change intelligence</title>
+<style>
+:root{color-scheme:dark;--bg:#070d13;--panel:#121d27;--border:#263a48;--muted:#99b0c0;--green:#47dfba}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 90% 60% at 85% 0%,#112a32 0%,transparent 55%),var(--bg);color:#edf8fd;font:15px/1.5 system-ui,Segoe UI,Inter,sans-serif}header{height:73px;border-bottom:1px solid #293844;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,70px)}.brand{font-size:22px;letter-spacing:-1px;font-weight:850}.brand b{color:var(--green)}.tag{font-size:11px;letter-spacing:1.6px;color:var(--green);font-weight:750;border:1px solid #235c53;border-radius:99px;padding:6px 11px}.wrap{max-width:1250px;margin:0 auto;padding:42px 24px 70px}.eyebrow{color:var(--green);font-size:12px;font-weight:750;letter-spacing:2px}h1{font-size:clamp(30px,5vw,53px);letter-spacing:-2px;line-height:1.08;margin:12px 0}.sub{color:var(--muted);max-width:770px;margin:12px 0 26px}a{color:#78eacb}.status{border:1px solid var(--border);background:#10212c;padding:12px 16px;border-radius:12px;color:#b9d5e1;margin:16px 0 22px}.status.warn{background:#261f17;border-color:#745434;color:#f4c88a}.grid{display:grid;grid-template-columns:1.5fr .7fr;gap:17px}.panel{border:1px solid var(--border);border-radius:16px;background:#101a24;padding:19px;min-width:0}.panelhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.panel h2{font-size:17px;margin:0}.pill{font-size:12px;color:#b8d0d8;background:#1c2b36;padding:6px 10px;border:1px solid #304553;border-radius:8px}.viewport{background:linear-gradient(135deg,#0a1922,#203440);border-radius:12px;overflow:hidden;position:relative;aspect-ratio:1.2;max-height:620px;touch-action:none;user-select:none}.viewport img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill;pointer-events:none}.viewport .right{clip-path:inset(0 0 0 50%)}.line{position:absolute;left:50%;height:100%;width:2px;background:white;box-shadow:0 0 15px #fff8;pointer-events:none}.handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:white;color:#18212a;font-weight:800;box-shadow:0 0 0 5px #fff3;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:#b6cbd8;font-weight:650}.dates{display:flex;justify-content:space-between;color:#b2c8d4;font-size:12px;padding:8px 0}.controls{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}button{background:#1a2b37;border:1px solid #354957;color:#cde1eb;padding:10px 15px;border-radius:9px;cursor:pointer;font-weight:650}button.active{background:#134b45;border-color:#32b79b;color:white}button:disabled{opacity:.4;cursor:not-allowed}.metric{padding:17px 0;border-bottom:1px solid #2b3c49}.metric small{font-size:12px;color:var(--muted);display:block}.metric strong{display:block;font-size:28px;line-height:1.25;letter-spacing:-1px}.meta{font-size:12px;overflow-wrap:anywhere;color:#a4bdcd}.meta b{color:#f1fbff}ul{padding-left:19px;color:#a8bfcd}li{margin:8px 0}footer{color:#718e9e;font-size:12px;margin-top:30px}@media(max-width:800px){.grid{grid-template-columns:1fr}.wrap{padding-top:26px}header{padding:0 19px}.tag{font-size:9px}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s}}
+</style>
+</head>
+<body>
+<header><div class="brand">◉ Infra<b>Track</b></div><span class="tag">EARTH OBSERVATION / ALPHA</span></header>
+<main class="wrap">
+<div class="eyebrow">SATELLITE INTELLIGENCE · REAL DATA ONLY</div>
+<h1>A0 Nord — Change explorer</h1>
+<p class="sub">A first experiment in observing infrastructure from orbit. Two actual Copernicus Sentinel-2 scenes, pixel-level cloud masking and flagged spectral changes — with every limitation visible.</p>
+<div class="status" id="status">Connecting to observation results…</div>
+<div class="grid">
+<section class="panel">
+<div class="panelhead"><h2>Before / after satellite comparison</h2><span class="pill" id="source">Sentinel-2 L2A</span></div>
+<div class="viewport" id="viewport">
+  <div class="empty" id="empty">No satellite images loaded yet.</div>
+  <img id="pre" alt="Real satellite observation before" hidden/>
+  <img class="right" id="post" alt="Real satellite observation after" hidden/>
+  <div class="line" id="cut" hidden></div><div class="handle" id="handle" hidden>↔</div>
+</div>
+<div class="dates"><span id="date0">Before: —</span><span id="date1">After: —</span></div>
+<div class="controls"><button id="rgb" class="active" disabled>True color</button><button id="changes" disabled>Flagged changes</button></div>
+<p class="meta" style="margin-top:15px">Drag the separator to compare. Highlighted regions represent <b>spectral change candidates</b>, not confirmed construction.</p>
+</section>
+<aside class="panel">
+<h2>Observation summary</h2>
+<div class="metric"><small>Candidate surface changes</small><strong id="hectares">—</strong><small>Hectares · requires ground verification</small></div>
+<div class="metric"><small>Clear pixels in both images</small><strong id="coverage">—</strong><small>Excluded pixels are not compared</small></div>
+<div class="metric"><small>Analysis pixel size</small><strong id="resolution">—</strong><small>Satellite surface reflectance, not aerial photography</small></div>
+<h2 style="margin-top:22px">Evidence</h2><div class="meta" id="evidence">No verified scene IDs yet.</div>
+<h2 style="margin-top:22px">What this does NOT tell us</h2>
+<ul><li>That detected changes are definitely roadworks.</li><li>The percentage of construction completed.</li><li>Anything about small road markings or internal structures.</li><li>Full coverage of the 8.6 km A0 lot.</li></ul>
+<p class="meta">The initial 2 km study area is approximate and not yet matched to a verified motorway alignment. Crop harvesting and seasonal vegetation can cause false detections.</p>
+<p class="meta">Source: <a href="https://earth-search.aws.element84.com/v1" target="_blank" rel="noopener">Element 84 Earth Search</a> · Copernicus Sentinel-2.</p>
+</aside>
+</div>
+<footer>InfraTrack Research Alpha · No fabricated images · No AI-generated detections · Experimental use only</footer>
+</main>
+<script>
+let result, showChanges=false, position=50;
+const el=id=>document.getElementById(id);
+function setPosition(x){position=Math.max(0,Math.min(100,x));el('post').style.clipPath='inset(0 0 0 '+position+'%)';el('cut').style.left=position+'%';el('handle').style.left=position+'%'}
+function layer(changes){showChanges=changes;el('post').src=changes?'candidates.png':'after.png';el('rgb').classList.toggle('active',!changes);el('changes').classList.toggle('active',changes)}
+el('rgb').onclick=()=>layer(false);el('changes').onclick=()=>layer(true);
+let dragging=false;
+el('viewport').addEventListener('pointerdown',e=>{if(!result)return;dragging=true;el('viewport').setPointerCapture(e.pointerId);move(e)});
+el('viewport').addEventListener('pointermove',e=>{if(dragging)move(e)});
+el('viewport').addEventListener('pointerup',()=>dragging=false);
+el('viewport').addEventListener('pointercancel',()=>dragging=false);
+function move(e){const r=el('viewport').getBoundingClientRect();setPosition(100*(e.clientX-r.left)/r.width)}
+async function start(){
+try{
+const response=await fetch('data.json?'+Date.now(),{cache:'no-store'});if(!response.ok)throw new Error('results.json unavailable');
+result=await response.json();
+if(result.status!=='ready'){
+ el('status').classList.add('warn');el('status').textContent='NO VERIFIED OBSERVATION — '+(result.message||'Satellite analysis has not completed.');
+ result=null;return;
+}
+el('status').textContent='REAL SENTINEL-2 · '+result.before.date+' → '+result.after.date+' · Research observation, not confirmed construction';
+el('empty').hidden=true;
+for(const id of ['pre','post','cut','handle'])el(id).hidden=false;
+el('pre').src='before.png';el('post').src='after.png';setPosition(50);
+el('rgb').disabled=false;el('changes').disabled=false;
+el('date0').textContent='◂ '+result.before.date;el('date1').textContent=result.after.date+' ▸';
+el('hectares').textContent=result.candidate_hectares.toLocaleString('en-US')+' ha';
+el('coverage').textContent=result.clear_overlap_percent+'%';
+el('resolution').textContent=result.pixel_size_m+' m';
+el('evidence').innerHTML='<b>Before scene:</b> '+escapeHtml(result.before.id)+'<br><b>After scene:</b> '+escapeHtml(result.after.id)+'<br><b>Processing:</b> real satellite imagery';
+}catch(err){el('status').classList.add('warn');el('status').textContent='NO VERIFIED OBSERVATION — '+err.message;result=null}}
+function escapeHtml(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
+start();
+</script>
+</body></html>
