@@ -6,6 +6,7 @@
 "use strict";
 const core=global.InfraWorkspaceCore;
 const preview=global.InfraCustomPreview;
+const registrar=global.InfraImageRegistration;
 if(!core)throw Error("InfraTrack workspace core missing");
 const $=id=>document.getElementById(id);
 const STAC="https://earth-search.aws.element84.com/v1/search";
@@ -20,6 +21,10 @@ let catalogSeq=0,viewSeq=0,activeToken=null;
 let highlighted=false,loadedPair=null,latestBusy=false,highlightRevision=0;
 let lastTap=null;
 function status(message){$("canvasStatus").textContent=message}
+function alignmentMessage(text,accepted=false){
+ $("alignmentState").textContent=text;
+ $("alignmentState").classList.toggle("unverified",!accepted);
+}
 function notice(message){
  $("recentAlert").hidden=!message;
  $("recentAlert").textContent=message||"";
@@ -83,7 +88,9 @@ function showEmpty(message){
  $("canvasLabels").hidden=true;
  $("compareControls").hidden=true;
  $("changeLayer").hidden=true;
+ $("unregisteredPair").hidden=true;
  $("highlightBtn").disabled=true;
+ alignmentMessage("Geometric alignment has not been checked.");
  loadedPair=null;
 }
 function setSlotContent(which,id){
@@ -323,7 +330,12 @@ async function applyHighlight(){
      core.alignedRGBA(after,decodePreviewPixels)
    ]);
    if(revision!==highlightRevision||!highlighted||loadedPair!==pair)return;
-   const diff=core.rgbDifference(oldBytes,newBytes,48);
+   const w=before.width,h=before.height;
+   if(!before.cloudMask||!after.cloudMask||
+      before.cloudMask.length!==w*h||after.cloudMask.length!==w*h)
+     throw Error("Cannot highlight changes without both valid local cloud masks");
+   const diff=core.rgbDifference(
+     oldBytes,newBytes,48,before.cloudMask,after.cloudMask);
    layer.width=before.width;layer.height=before.height;
    const ctx=layer.getContext("2d");
    if(!ctx)throw Error("Canvas rendering unavailable");
@@ -340,12 +352,66 @@ async function applyHighlight(){
    $("changeSummary").textContent="Difference overlay unavailable: "+err.message;
  }
 }
+
+function encodeRGBA(data,w,h){
+ const canvas=document.createElement("canvas");
+ canvas.width=w;canvas.height=h;
+ const ctx=canvas.getContext("2d");
+ if(!ctx)throw Error("Cannot create a georegistered image canvas");
+ const image=ctx.createImageData(w,h);
+ image.data.set(data);
+ ctx.putImageData(image,0,0);
+ return canvas.toDataURL("image/png");
+}
+async function alignScenes(first,second){
+ if(!registrar)throw Error("Geometric registration engine unavailable");
+ if(first.width!==second.width||first.height!==second.height)
+   throw Error("Source rasters are not on the same-sized geographic grid");
+ const w=first.width,h=first.height;
+ if(!first.cloudMask||!second.cloudMask||
+    first.cloudMask.length!==w*h||second.cloudMask.length!==w*h)
+   throw Error("Sentinel local cloud masks are unavailable: alignment cannot be verified");
+ const [a,b]=await Promise.all([
+   core.alignedRGBA(first,decodePreviewPixels),
+   core.alignedRGBA(second,decodePreviewPixels)
+ ]);
+ const result=registrar.estimateRegistration(
+   a,b,w,h,first.cloudMask,second.cloudMask);
+ if(!result.ok)throw Error(result.reason||
+   "Not enough persistent stable landmarks to estimate a safe transform");
+ const warp=registrar.warpRGBA(b,w,h,result,second.cloudMask);
+ return {
+   old:{...first,rgba:a},
+   newest:{...second,rgba:warp.rgba,cloudMask:warp.mask,
+       image:encodeRGBA(warp.rgba,w,h)},
+   quality:result
+ };
+}
+function showUnregisteredPair(first,second,reason){
+ loadedPair=null;
+ $("canvasOld").hidden=true;$("canvasNew").hidden=true;
+ $("canvasDivider").hidden=true;$("canvasLabels").hidden=true;
+ $("compareControls").hidden=true;$("changeLayer").hidden=true;
+ $("highlightBtn").disabled=true;
+ $("unregisteredBefore").src=first.image;
+ $("unregisteredAfter").src=second.image;
+ $("unregisteredBeforeDate").textContent="BEFORE · "+first.date;
+ $("unregisteredAfterDate").textContent="AFTER · "+second.date;
+ $("unregisteredPair").hidden=false;
+ alignmentMessage("Alignment not verified: "+reason+
+  ". Images are shown separately. Overlay and change detection are disabled.");
+ $("changeSummary").textContent="A reliable correction could not be estimated. "+
+   "The system will not infer ground changes from mismatched pixels.";
+}
+
 async function updateCanvas(){
  cancelView();
  renderSlots();renderTimeline();
  const matched=core.pairFrom(slots,sceneIndex);
  $("canvasLabels").hidden=true;
  $("changeLayer").hidden=true;
+ $("unregisteredPair").hidden=true;
+ alignmentMessage("Checking geometric alignment…");
  $("compareControls").hidden=true;
  $("highlightBtn").disabled=true;
  $("canvasOld").hidden=true;$("canvasNew").hidden=true;
@@ -382,19 +448,39 @@ async function updateCanvas(){
  $("canvasNew").hidden=true;
  if(success.length===2){
    const second=success[1].r.value;
-   $("canvasNew").src=second.image;$("canvasNew").hidden=false;
-   $("labelOld").textContent="BEFORE · "+first.date;
-   $("labelNew").textContent="AFTER · "+second.date;
-   $("canvasDivider").hidden=false;
-   $("compareControls").hidden=false;
-   clip(50);
-   loadedPair=[first,second];
-   $("highlightBtn").disabled=false;
-   applyHighlight();
-   status("Comparing "+first.date+" → "+second.date+" · move the slider. "+
-       (first.warning||second.warning?"Cloud warning: "+[first.warning,second.warning].filter(Boolean).join("; "):""));
+   status("Two observations loaded. Verifying persistent landmarks and scene geometry…");
+   try{
+     const aligned=await alignScenes(first,second);
+     if(token.aborted||request!==viewSeq)return;
+     const quality=aligned.quality;
+     $("canvasNew").src=aligned.newest.image;
+     $("canvasNew").hidden=false;
+     $("labelOld").textContent="BEFORE · "+first.date;
+     $("labelNew").textContent="AFTER · "+second.date;
+     $("canvasDivider").hidden=false;
+     $("compareControls").hidden=false;
+     clip(50);
+     loadedPair=[aligned.old,aligned.newest];
+     $("highlightBtn").disabled=false;
+     alignmentMessage(
+       "Co-registration accepted · "+quality.featureCount+
+       " stable features · RMSE "+quality.rmse.toFixed(2)+
+       " px · maximum residual correction "+quality.maxShift.toFixed(1)+
+       " px. Constrained affine transform; relief parallax may remain.",true);
+     applyHighlight();
+     status("Comparing "+first.date+" → "+second.date+
+       " · coordinates aligned with stable visual features. "+
+       ([first.warning,second.warning].filter(Boolean).join("; ")));
+   }catch(err){
+     if(token.aborted||request!==viewSeq)return;
+     showUnregisteredPair(first,second,err?.message||"Unknown geometric alignment failure");
+     status("Cannot safely overlay "+first.date+" and "+second.date+
+       "; no false differences will be highlighted.");
+   }
  }else{
    loadedPair=null;
+   $("unregisteredPair").hidden=true;
+   alignmentMessage("Single observation · geometric co-registration is unnecessary.");
    $("canvasLabels").hidden=false;
    $("canvasDivider").hidden=true;
    $("canvasNew").hidden=true;
