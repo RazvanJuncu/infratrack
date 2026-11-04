@@ -137,7 +137,7 @@ footer{padding:15px 0;color:var(--muted);font-size:12px}
   </section>
   <section class="panel">
    <div class="head"><h2>Satellite observation history</h2><div style="display:flex;gap:8px;align-items:center"><select id="timeRange" aria-label="Observation time window" style="width:auto"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option></select><button type="button" id="refresh">Refresh</button></div></div>
-   <p class="help"><strong>Select one date</strong> to view its real satellite image, or <strong>select two dates</strong> to compare them with an overlay slider. Click a selected date again to deselect it. Cloud percentages refer to the whole satellite scene, not necessarily your square.</p>
+   <p class="help"><strong>Single-click one date</strong> to view its real satellite image, then <strong>single-click a different date</strong> to compare them with an overlay slider. A rapid double-click on the same card counts as one selection. Click a selected date again after a moment to deselect it. Cloud percentages refer to the whole satellite scene, not necessarily your square.</p>
    <div id="selectedStatus" role="status">No dates selected · choose one or two below</div>
    <div id="checkedAt" class="checkline">Not checked yet</div>
    <div id="observations" class="obs-grid"></div>
