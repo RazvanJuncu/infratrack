@@ -262,8 +262,14 @@ def main():
     Image.fromarray(overlay,"RGBA").save(output/"corridor_changes.png",optimize=True)
     (output/"corridor.geojson").write_text(json.dumps(route,ensure_ascii=False),encoding="utf-8")
     if spectral is not None:
-        Image.fromarray(render_rgba(spectral),"RGBA").save(
+        colors=render_rgba(spectral)
+        Image.fromarray(colors,"RGBA").save(
             output/"spectral_candidates.png",optimize=True)
+        alpha=colors[:,:,3:4].astype(np.float32)/255
+        preview=(img1.astype(np.float32)*(1-alpha) +
+                 colors[:,:,:3].astype(np.float32)*alpha).astype(np.uint8)
+        Image.fromarray(preview,"RGB").save(
+            output/"spectral_preview.png",optimize=True)
     for name, image in [("before.png", img0), ("after.png", img1),
                         ("candidates.png", marked), ("interpreted.png", interpreted),
                         ("corridor_preview.png",outlined)]:
@@ -314,7 +320,7 @@ def main():
         "source_api": "https://earth-search.aws.element84.com/v1",
         "images": ["before.png", "after.png", "candidates.png", "interpreted.png",
                    "corridor_preview.png","corridor_changes.png"] +
-                  (["spectral_candidates.png"] if spectral is not None else [])
+                  (["spectral_candidates.png","spectral_preview.png"] if spectral is not None else [])
     }
     (output / "data.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
