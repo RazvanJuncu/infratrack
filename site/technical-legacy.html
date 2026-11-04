@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>InfraTrack — Satellite change intelligence</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root{color-scheme:dark;--bg:#070d13;--panel:#121d27;--border:#263a48;--muted:#99b0c0;--green:#47dfba}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 90% 60% at 85% 0%,#112a32 0%,transparent 55%),var(--bg);color:#edf8fd;font:15px/1.5 system-ui,Segoe UI,Inter,sans-serif}header{height:73px;border-bottom:1px solid #293844;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,70px)}.brand{font-size:22px;letter-spacing:-1px;font-weight:850}.brand b{color:var(--green)}.tag{font-size:11px;letter-spacing:1.6px;color:var(--green);font-weight:750;border:1px solid #235c53;border-radius:99px;padding:6px 11px}.wrap{max-width:1250px;margin:0 auto;padding:42px 24px 70px}.eyebrow{color:var(--green);font-size:12px;font-weight:750;letter-spacing:2px}h1{font-size:clamp(30px,5vw,53px);letter-spacing:-2px;line-height:1.08;margin:12px 0}.sub{color:var(--muted);max-width:770px;margin:12px 0 26px}a{color:#78eacb}.status{border:1px solid var(--border);background:#10212c;padding:12px 16px;border-radius:12px;color:#b9d5e1;margin:16px 0 22px}.status.warn{background:#261f17;border-color:#745434;color:#f4c88a}.grid{display:grid;grid-template-columns:1.5fr .7fr;gap:17px}.panel{border:1px solid var(--border);border-radius:16px;background:#101a24;padding:19px;min-width:0}.panelhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.panel h2{font-size:17px;margin:0}.pill{font-size:12px;color:#b8d0d8;background:#1c2b36;padding:6px 10px;border:1px solid #304553;border-radius:8px}.viewport{background:linear-gradient(135deg,#0a1922,#203440);border-radius:12px;overflow:hidden;position:relative;aspect-ratio:1.2;max-height:620px;touch-action:none;user-select:none}.viewport img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill;pointer-events:none}.viewport .right{clip-path:inset(0 0 0 50%)}.line{position:absolute;left:50%;height:100%;width:2px;background:white;box-shadow:0 0 15px #fff8;pointer-events:none}.handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:white;color:#18212a;font-weight:800;box-shadow:0 0 0 5px #fff3;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:#b6cbd8;font-weight:650}.dates{display:flex;justify-content:space-between;color:#b2c8d4;font-size:12px;padding:8px 0}.controls{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}button{background:#1a2b37;border:1px solid #354957;color:#cde1eb;padding:10px 15px;border-radius:9px;cursor:pointer;font-weight:650}button.active{background:#134b45;border-color:#32b79b;color:white}button:disabled{opacity:.4;cursor:not-allowed}.metric{padding:17px 0;border-bottom:1px solid #2b3c49}.metric small{font-size:12px;color:var(--muted);display:block}.metric strong{display:block;font-size:28px;line-height:1.25;letter-spacing:-1px}.meta{font-size:12px;overflow-wrap:anywhere;color:#a4bdcd}.meta b{color:#f1fbff}ul{padding-left:19px;color:#a8bfcd}li{margin:8px 0}footer{color:#718e9e;font-size:12px;margin-top:30px}#map{height:410px;border-radius:12px;background:#172734;z-index:0} .widepanel{margin-bottom:17px} #timeline svg{width:100%;max-height:260px} .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#a3bcc8} .legend strong{font-size:14px;color:#38dbc0} .maphint{color:#a6bdcb;font-size:12px;margin-top:10px} .micro{font-size:12px;color:#b9d0df} @media(max-width:800px){#map{height:340px}.grid{grid-template-columns:1fr}.wrap{padding-top:26px}header{padding:0 19px}.tag{font-size:9px}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s}}
+ .annotation-layout{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;margin-top:16px} .field{display:flex;flex-direction:column;gap:6px;margin:12px 0;color:#aac2d0;font-size:12px} .field input,.field textarea,.field select{background:#192b37;border:1px solid #365263;border-radius:9px;padding:10px 12px;color:#efffff;font:14px system-ui;width:100%} .field textarea{min-height:70px;resize:vertical}.field input:focus,.field textarea:focus{outline:2px solid #57c6b2}.bigbtn{background:#146258;color:#f2fffb;border:1px solid #38b8a1}.bigbtn:disabled{opacity:.5}.sample-info{border-radius:12px;background:#112631;border:1px solid #314b59;padding:16px;min-height:122px}.sample-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.sample-cell{background:#192b38;padding:8px;border-radius:9px;font-size:11px;color:#b5cdd7}.sample-cell b{display:block;font-size:15px;color:#f2f9ff}.labhint{color:#8fb0c0;font-size:12px}.labstatus{color:#b7dad5;font-size:13px}.review-queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:9px;max-height:320px;overflow-y:auto;padding:2px 4px 7px;margin:12px 0}.review-target{background:#142934;border:1px solid #2a4b55;border-radius:10px;padding:11px;text-align:left;color:#d6e9ee;cursor:pointer}.review-target:hover{border-color:#53c7ad;background:#1b3440}.review-target.active{border-color:#4bdbb4;box-shadow:0 0 0 1px #4bdbb4}.review-target small{display:block;font-size:10px;color:#85adbf;margin:5px 0}.review-target strong{display:block;font-size:12px}.review-target span{font-size:11px;color:#a6c6d0}.validation-matrix{border-collapse:collapse;width:100%;font-size:12px}.validation-matrix td,.validation-matrix th{border:1px solid #304856;padding:7px;text-align:center} @media(max-width:850px){.annotation-layout{grid-template-columns:1fr}} 
+
+.quick-studio{border:1px solid #2e685f;border-radius:17px;background:linear-gradient(135deg,#122c30,#111d29 65%);padding:20px;margin:24px 0}
+.quick-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:21px}
+.quick-images{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.quick-img-card{background:#0b1b25;border:1px solid #2a4654;padding:10px;border-radius:13px;min-width:0}
+.quick-img-card canvas{display:block;width:100%;aspect-ratio:1/1;max-height:260px;object-fit:contain;image-rendering:pixelated;background:#11242f;border-radius:8px;margin-top:8px}
+.quick-img-card small{font-size:11px;color:#a0beca;letter-spacing:.04em}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.quick-choice{font-size:15px;padding:15px 9px;border:1px solid #46616f;background:#172f3a;color:#f2fffe;font-weight:700;min-height:56px}
+.quick-choice:hover{background:#234553}.quick-choice.chosen{border-color:#50d3b9;background:#145d54;box-shadow:inset 0 0 0 1px #50d3b9}
+.quick-choice[disabled]{opacity:.42;cursor:not-allowed}
+.quick-meter{height:8px;background:#213b44;border-radius:10px;overflow:hidden;margin:11px 0}
+.quick-meter div{height:100%;width:0;background:#42d5b3;transition:width .2s ease}
+.quick-mini-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.quick-mini-controls button{font-size:12px;padding:9px 11px}
+.quick-verify{margin-top:12px;width:100%;background:#153b38;border-color:#3b9381}
+.quick-verify:not(:disabled):hover{background:#1b514a}
+.quick-muted{color:#99b8c4;font-size:12px;line-height:1.5}
+.quick-note{font-size:12px;color:#d2ebdf;background:#1a3638;padding:9px 12px;border-radius:9px;margin-top:12px}
+#quickReview{scroll-margin-top:24px}
+@media(max-width:860px){.quick-grid{grid-template-columns:1fr}}
+@media(max-width:440px){.quick-studio{padding:13px}.quick-images{gap:7px}.quick-img-card{padding:6px}.quick-choice{font-size:13px;padding:10px 4px}}
+</style>
+</head>
+<body>
+<div style="padding:14px 24px;background:#173c3d;color:#e3fffa;font:14px system-ui"><strong>Archived research prototype (A0 Nord only).</strong> This is not the current operational Technical dashboard. <a href="technical.html" style="color:#97ffe5">Return to current Technical</a>.</div>
+
+<header><div class="brand">◉ Infra<b>Track</b></div><span class="tag">EARTH OBSERVATION / ALPHA</span></header>
+<main class="wrap">
+<div class="eyebrow">SATELLITE INTELLIGENCE · REAL DATA ONLY</div>
+<h1>A0 Nord — Change explorer</h1>
+<p class="sub">A first experiment in observing infrastructure from orbit. Two actual Copernicus Sentinel-2 scenes, pixel-level cloud masking and flagged spectral changes — with every limitation visible.</p>
+<div class="status" id="status">Connecting to observation results…</div>
+<section class="panel widepanel">
+<div class="panelhead"><h2>Live geographic context · A0 Nord Lot 3</h2><span class="pill" id="mapStatus">Loading OSM road alignment…</span></div>
+<div id="map" role="application" aria-label="Map with A0 motorway alignment and 2 km satellite study area"></div>
+<div class="maphint">The map opens on the 2 km test area. Satellite layers are the real processed Sentinel-2 scenes, approximately positioned from a UTM raster onto a geographic rectangle. At 10 m resolution details blur when zoomed further. Road line: © OpenStreetMap contributors (ODbL), research geometry only.</div>
+</section>
+<section class="panel widepanel">
+<div class="panelhead"><h2>Multiyear surface vegetation signal</h2><span class="pill">NDVI · not completion percentage</span></div>
+<div id="timeline" class="micro">Awaiting real satellite observations…</div>
+<div class="legend"><span><strong>━</strong> Mapped corridor (±130 m)</span><span><span style="color:#e2a45a;font-weight:800">━</span> Adjacent land (control)</span></div>
+<p class="meta">Observations may fall on different dates and show seasonal farming. NDVI is not construction progress, and an A0 segment mapped in OSM is not an official as-built survey.</p>
+</section>
+<section class="quick-studio" id="quickReview" aria-labelledby="quickHeading">
+ <div class="panelhead">
+   <div><div class="eyebrow">NEW · HUMAN-IN-THE-LOOP</div><h2 id="quickHeading" style="font-size:22px;margin:6px 0 0">Quick Review</h2></div>
+   <span class="pill" id="quickProgress">Loading real examples…</span>
+ </div>
+ <p class="quick-muted">Look at a real Sentinel before/after crop, pick one of four options, and move to the next. <b>Your choices are provisional, NOT trusted AI training labels.</b> You only need independent evidence if you later decide to verify one.</p>
+ <div class="quick-meter" role="progressbar" aria-label="Examples reviewed"><div id="quickProgressBar"></div></div>
+ <div class="quick-grid">
+   <div>
+     <div class="quick-images">
+       <div class="quick-img-card">
+         <small>BEFORE · <span id="quickBeforeDate">—</span></small>
+         <canvas id="quickBefore" width="260" height="260" aria-label="Unmodified real Sentinel before crop with 10m pixel crosshair"></canvas>
+       </div>
+       <div class="quick-img-card">
+         <small>AFTER · <span id="quickAfterDate">—</span></small>
+         <canvas id="quickAfter" width="260" height="260" aria-label="Unmodified real Sentinel after crop with 10m pixel crosshair"></canvas>
+       </div>
+     </div>
+     <p class="quick-muted" id="quickImageWarning">Both crops come from the original 10 m Sentinel images. The white box marks the selected pixel. A 480 m neighborhood is shown; this is not high-resolution aerial imagery.</p>
+   </div>
+   <div>
+     <div class="eyebrow">WHAT DO YOU THINK CHANGED?</div>
+     <h3 id="quickCandidateName" style="font-size:19px;margin:5px 0">Loading suggested location…</h3>
+     <p class="quick-muted" id="quickCandidateDetail">Satellite data loading</p>
+     <div class="quick-actions" aria-label="Provisional visual classification choices">
+       <button type="button" class="quick-choice" id="quickConstruction">🏗️ Construction change</button>
+       <button type="button" class="quick-choice" id="quickAgriculture">🌾 Agricultural change</button>
+       <button type="button" class="quick-choice" id="quickUnchanged">◻ No significant change</button>
+       <button type="button" class="quick-choice" id="quickUnsure">? Can’t tell</button>
+     </div>
+     <p id="quickDraftState" class="quick-muted">Not classified</p>
+     <div class="quick-mini-controls">
+       <button type="button" id="quickPrev">← Previous</button>
+       <button type="button" id="quickNext">Next →</button>
+       <button type="button" id="quickUndo">Undo</button>
+       <button type="button" id="quickExport">Export backup</button>
+     </div>
+     <button type="button" id="quickVerify" class="quick-verify">Verify selected draft for AI training</button>
+     <div class="quick-note" role="status" id="quickReviewStatus">Selections will be kept separate from model training.</div>
+     <p id="quickPersistence" class="quick-muted">Loading browser storage status…</p>
+   </div>
+ </div>
+</section>
+<div class="grid">
+<section class="panel">
+<div class="panelhead"><h2>Before / after satellite comparison</h2><span class="pill" id="source">Sentinel-2 L2A</span></div>
+<div class="viewport" id="viewport">
+  <div class="empty" id="empty">No satellite images loaded yet.</div>
+  <img id="pre" alt="Real satellite observation before" hidden/>
+  <img class="right" id="post" alt="Real satellite observation after" hidden/>
+  <div class="line" id="cut" hidden></div><div class="handle" id="handle" hidden>↔</div>
+</div>
+<div class="dates"><span id="date0">Before: —</span><span id="date1">After: —</span></div>
+<div class="controls"><button id="rgb" class="active" disabled>True color</button><button id="changes" disabled>All vegetation changes</button><button id="interpret" disabled>Land-cover interpretation</button><button id="corridor" disabled>Along A0 corridor</button><button id="spectralBtn" disabled>v0.4 · Multispectral</button></div>
+<div class="meta" style="margin:12px 0">v0.4: <span style="color:#2be9bc;font-weight:700">■</span> Persistent exposed-surface hypothesis &nbsp; <span style="color:#6a89db;font-weight:700">■</span> Likely seasonal crop regrowth &nbsp; <span style="color:#df9a44;font-weight:700">■</span> Unresolved. <b>None are confirmed construction.</b></div>
+<p class="meta" style="margin-top:15px">Drag the separator to compare. Highlighted regions represent <b>spectral change candidates</b>, not confirmed construction.</p>
+</section>
+<aside class="panel">
+<h2>Multispectral screening · v0.4</h2>
+<div class="status" id="v04Status">Awaiting additional SWIR and 2026 spring observations…</div>
+<div class="metric"><small>Persistent exposed-surface hypotheses</small><strong id="v04persistent">—</strong><small>Could still be agricultural land; not verified construction</small></div>
+<div class="metric"><small>Likely seasonal cropland regrowth</small><strong id="v04seasonal">—</strong><small>Historical cropland context + vegetation returned</small></div>
+<div class="metric"><small>Unresolved changes</small><strong id="v04uncertain">—</strong><small>Require interpretation against labeled examples</small></div>
+<div class="metric"><small>Valid pixels across all four observations</small><strong id="v04valid">—</strong><small>Within mapped corridor; no model confidence claimed</small></div>
+<h2 style="margin-top:25px">Legacy vegetation screening</h2>
+<div class="metric"><small>Candidate surface changes</small><strong id="hectares">—</strong><small>Hectares · requires ground verification</small></div>
+<div class="metric"><small>Changes inside mapped A0 corridor (±130 m)</small><strong id="roadchanges">—</strong><small>Not verified construction · 2 km study area only</small></div>
+<div class="metric"><small>Mapped corridor study coverage</small><strong id="corridorarea">—</strong></div>
+<div class="metric"><small>2021 cropland context</small><strong id="agri">—</strong><small>Not proof of farming today; may include new infrastructure</small></div>
+<div class="metric"><small>Persistent non-cropland changes</small><strong id="persistent">—</strong><small>Requires visual verification; NOT confirmed roadworks</small></div>
+<div class="metric"><small>Other candidates for manual review</small><strong id="review">—</strong></div>
+<div class="metric"><small>Clear pixels in both images</small><strong id="coverage">—</strong><small>Excluded pixels are not compared</small></div>
+<div class="metric"><small>Analysis pixel size</small><strong id="resolution">—</strong><small>Satellite surface reflectance, not aerial photography</small></div>
+<h2 style="margin-top:22px">Evidence</h2><div class="meta" id="evidence">No verified scene IDs yet.</div>
+<h2 style="margin-top:22px">What this does NOT tell us</h2>
+<ul><li>That detected changes are definitely roadworks.</li><li>The percentage of construction completed.</li><li>Anything about small road markings or internal structures.</li><li>Full coverage of the 8.6 km A0 lot.</li></ul>
+<p class="meta">The analysis window is now centered on an OSM-mapped A0 Lot 3 segment. This is a map-derived corridor, not an authoritative engineering alignment. Crop harvesting and seasonal vegetation can still cause false detections. The road buffer is 130 m, not the legal construction footprint.</p>
+<p class="meta">Sources: <a href="https://earth-search.aws.element84.com/v1" target="_blank" rel="noopener">Element 84 Earth Search</a> · Copernicus Sentinel-2; <a href="https://esa-worldcover.org/en/data-access" target="_blank" rel="noopener">ESA WorldCover 2021</a> (CC BY 4.0). Land-cover labels were generated by an existing ML product; the triage rules are deterministic, NOT a locally running neural network.</p>
+</aside>
+</div>
+<section class="panel widepanel" id="validationLab" style="margin-top:20px">
+<div class="panelhead"><h2>Advanced · Evidence and model validation</h2><span class="pill">Verified evidence before model claims</span></div>
+<p class="meta">Select a real Sentinel pixel and inspect NDVI, BSI and NDBI across four observations. Add a documented label using independent dated evidence, not just the same satellite image being classified. An experimental Random Forest will be trained only after enough sourced labels exist across separate geographic sites.</p>
+<div class="controls">
+<label class="pill" style="cursor:pointer"><input id="inspectMode" type="checkbox"/> Inspect pixel on image (disables comparison slider while enabled); map clicks always inspect</label>
+</div>
+<div class="box" style="margin-top:18px">
+  <div class="panelhead"><h2>Suggested locations to investigate</h2><span class="pill" id="reviewStatus">Loading candidate queue…</span></div>
+  <p class="meta">Automatically suggested from REAL satellite spectra, spaced across ~250 m map blocks. These are <b>unverified investigation targets</b>, NOT construction detections or ground-truth labels. Choose a candidate, then seek a dated independent source before submitting an annotation. No evidence? Skip it.</p>
+  <div class="controls" id="reviewFilters">
+     <button id="reviewAll" class="active" type="button">All suggestions</button>
+     <button id="reviewBare" type="button">Persistent bare</button>
+     <button id="reviewSeasonal" type="button">Seasonal recovery</button>
+     <button id="reviewStable" type="button">Stable reference</button>
+  </div>
+  <div class="review-queue" id="reviewQueueList"></div>
+  <p class="labhint" id="reviewSourceHint">Satellite candidate selection alone is never independent evidence.</p>
+</div>
+<div class="annotation-layout">
+  <div>
+    <div class="sample-info" id="sampleInfo">Select a pixel in the before/after image above or click on the mapped satellite image. No location is selected.</div>
+    <div id="sampleMetrics" class="sample-grid"></div>
+    <p class="labhint">Pixel indices come from the underlying UTM 10 m grid. SWIR-derived indicators use native 20 m data resampled to this grid. Spectral readings are measurements, not independent ground truth.</p>
+    <div class="status" id="modelStatus" style="margin-top:15px">Reading validation dataset status…</div>
+    <div id="modelMetrics" class="micro"></div>
+  </div>
+  <div id="evidencePanel" style="display:none">
+    <h2 style="margin-bottom:8px">Verify with independent evidence</h2>
+    <p class="quick-muted">Only verified labels are eligible to be evaluated for model training. Quick selections never count automatically.</p>
+    <label class="field">Ground-truth class
+      <select id="labelClass"><option value="construction">Construction change</option><option value="agriculture">Agricultural or harvest change</option><option value="unchanged">No significant change</option></select>
+    </label>
+    <label class="field">Independent site group (same physical site = same ID)
+      <input id="labelSite" maxlength="64" placeholder="e.g. a0_interchange_east_01"/>
+    </label>
+    <label class="field">Independent dated evidence URL
+      <input id="labelUrl" type="url" placeholder="https://... dated aerial photo, verified report"/>
+    </label>
+    <label class="field">Date of that evidence
+      <input id="labelDate" type="date"/>
+    </label>
+    <label class="field">What does the evidence prove?
+      <textarea id="labelNote" maxlength="1200" placeholder="Explain why this location is construction, agriculture or unchanged, and which dates are covered."></textarea>
+    </label>
+    <label class="field" style="flex-direction:row;align-items:flex-start"><input id="labelAttestation" type="checkbox" style="width:auto;margin-top:3px"/> I checked the independent, dated source and confirm this label is supported.</label>
+    <button class="bigbtn" id="submitLabel" disabled>Create annotation issue on GitHub</button>
+    <p class="labstatus" id="labelMessage">A selected pixel and its evidence are required. GitHub Issues will open prefilled; you must submit the issue yourself.</p>
+  </div>
+</div>
+</section>
+<footer>InfraTrack Research Alpha · No fabricated imagery or ground-truth labels · No validated accuracy claims until independent tests pass</footer>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+<script src="quick_label.js"></script>
+<script>
+let result, mode='rgb', position=50;
+let labPack=null, rawArrays=null, worldClasses=null, corridorMask=null, chosenSample=null, mapRef=null, markerRef=null;
+const el=id=>document.getElementById(id);
+function setPosition(x){position=Math.max(0,Math.min(100,x));el('post').style.clipPath='inset(0 0 0 '+position+'%)';el('cut').style.left=position+'%';el('handle').style.left=position+'%'}
+function layer(next){mode=next;el('post').src=next==='changes'?'candidates.png':next==='interpret'?'interpreted.png':next==='corridor'?'corridor_preview.png':next==='spectralBtn'?'spectral_preview.png':'after.png';for(const b of ['rgb','changes','interpret','corridor','spectralBtn'])el(b).classList.toggle('active',b===next)}
+el('rgb').onclick=()=>layer('rgb');el('changes').onclick=()=>layer('changes');el('interpret').onclick=()=>layer('interpret');el('corridor').onclick=()=>layer('corridor');el('spectralBtn').onclick=()=>layer('spectralBtn');
+let dragging=false;
+el('viewport').addEventListener('pointerdown',e=>{
+ if(!result)return;
+ if(el('inspectMode').checked){
+   const rect=el('viewport').getBoundingClientRect();
+   const col=Math.floor((e.clientX-rect.left)/rect.width*(labPack?.width||200));
+   const row=Math.floor((e.clientY-rect.top)/rect.height*(labPack?.height||200));
+   selectPixel(row,col);
+   return;
+ }
+ dragging=true;el('viewport').setPointerCapture(e.pointerId);move(e)
+});
+el('viewport').addEventListener('pointermove',e=>{if(dragging)move(e)});
+el('viewport').addEventListener('pointerup',()=>dragging=false);
+el('viewport').addEventListener('pointercancel',()=>dragging=false);
+function move(e){const r=el('viewport').getBoundingClientRect();setPosition(100*(e.clientX-r.left)/r.width)}
+async function start(){
+try{
+const response=await fetch('data.json?'+Date.now(),{cache:'no-store'});if(!response.ok)throw new Error('results.json unavailable');
+result=await response.json();
+if(result.status!=='ready'){
+ el('status').classList.add('warn');el('status').textContent='NO VERIFIED OBSERVATION — '+(result.message||'Satellite analysis has not completed.');
+ result=null;return;
+}
+el('status').textContent='REAL SENTINEL-2 · '+result.before.date+' → '+result.after.date+' · Research observation, not confirmed construction';
+el('empty').hidden=true;
+for(const id of ['pre','post','cut','handle'])el(id).hidden=false;
+el('pre').src='before.png';el('post').src='after.png';setPosition(50);
+el('rgb').disabled=false;el('changes').disabled=false;el('interpret').disabled=!result.interpretation;el('corridor').disabled=result.corridor?.status!=='mapped_osm';
+const v=result.v04;
+if(v?.status==='ready'){
+  el('v04Status').textContent='4 real satellite observations · NDVI + BSI + NDBI · experimental rules (NOT a trained construction AI)';
+  el('v04persistent').textContent=v.persistent_bare_candidate_ha+' ha';
+  el('v04seasonal').textContent=v.likely_seasonal_cropland_ha+' ha';
+  el('v04uncertain').textContent=v.unresolved_change_ha+' ha';
+  el('v04valid').textContent=v.corridor_valid_percent+'%';
+  el('spectralBtn').disabled=false;
+}else{
+  el('v04Status').classList.add('warn');
+  el('v04Status').textContent='MULTISPECTRAL ANALYSIS UNAVAILABLE — '+(v?.reason||'No verified SWIR observations');
+}
+el('date0').textContent='◂ '+result.before.date;el('date1').textContent=result.after.date+' ▸';
+el('hectares').textContent=result.candidate_hectares.toLocaleString('en-US')+' ha';
+el('roadchanges').textContent=result.corridor?.status==='mapped_osm'?result.corridor.candidate_hectares+' ha':'Unavailable';
+el('corridorarea').textContent=result.corridor?.status==='mapped_osm'?result.corridor.study_hectares+' ha':'Unavailable';
+renderTimeline(result.temporal||[]);
+await initValidation(result);
+await renderMap(result);
+el('coverage').textContent=result.clear_overlap_percent+'%';
+el('resolution').textContent=result.pixel_size_m+' m';
+if(result.interpretation){
+ el('agri').textContent=result.interpretation.agricultural_context_hectares+' ha';
+ el('persistent').textContent=result.interpretation.persistent_noncrop_hectares+' ha';
+ el('review').textContent=result.interpretation.manual_review_hectares+' ha';
+}
+
+el('evidence').innerHTML='<b>Before scene:</b> '+escapeHtml(result.before.id)+'<br><b>After scene:</b> '+escapeHtml(result.after.id)+'<br><b>Follow-up scene:</b> '+escapeHtml(result.interpretation?.followup?.id||'not available')+'<br><b>Land-cover baseline:</b> '+escapeHtml(result.interpretation?.worldcover_tile||'not available')+'<br><b>Processing:</b> real satellite imagery';
+}catch(err){el('status').classList.add('warn');el('status').textContent='NO VERIFIED OBSERVATION — '+err.message;result=null}}
+
+async function renderMap(data){
+ if(typeof L==='undefined'){el('mapStatus').textContent='Map library unavailable';return}
+ const bounds=data.site.bounds;
+ const map=L.map('map',{scrollWheelZoom:false,preferCanvas:true,zoomControl:true});
+ mapRef=map;
+ map.on('click',event=>{
+   if(!labPack || typeof proj4==='undefined')return;
+   const info=labPack.grid;
+   const utm='+proj=utm +zone=35 +datum=WGS84 +units=m +no_defs +type=crs';
+   const xy=proj4('EPSG:4326',utm,[event.latlng.lng,event.latlng.lat]);
+   const col=Math.floor((xy[0]-info.origin_easting)/info.pixel_size_m);
+   const row=Math.floor((info.origin_northing-xy[1])/info.pixel_size_m);
+   selectPixel(row,col,event.latlng);
+ });
+ const streets=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+   maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+ }).addTo(map);
+ const beforeImg=L.imageOverlay('before.png',bounds,{opacity:1,interactive:false});
+ const afterImg=L.imageOverlay('after.png',bounds,{opacity:1,interactive:false}).addTo(map);
+ // For this alpha, a projected UTM raster is approximately shown as a geographic rectangle.
+ const track=L.rectangle(bounds,{weight:2,color:'#ffbd62',fill:false,dashArray:'7 5'}).addTo(map);
+ track.bindPopup('Research AOI 2 km × 2 km. NOT the whole motorway lot.');
+ const spectralReady=data.v04?.status==='ready';
+ const evidence=L.imageOverlay(spectralReady?'spectral_candidates.png':'corridor_changes.png',
+    bounds,{opacity:0.8,interactive:false});
+ let road=null;
+ let geo={features:[]};
+ try{
+   const response=await fetch('corridor.geojson',{cache:'no-store'});
+   if(!response.ok)throw Error('OSM geometry missing');
+   geo=await response.json();
+   if(geo.features?.length){
+     road=L.geoJSON(geo,{style:{color:'#00ddbb',weight:3,opacity:.96},
+       onEachFeature:(feature,layer)=>layer.bindPopup('Mapped A0 Lot 3 · OSM way '+feature.properties?.osm_way_id+' · NOT an official survey')}).addTo(map);
+   }
+ }catch(e){console.warn('OSM geometry is unavailable',e)}
+ // Critical: open on the investigated imagery, not 7km of unrelated land.
+ map.fitBounds(bounds,{padding:[25,25],maxZoom:14});
+ el('mapStatus').textContent=road?
+    (geo.features.length+' mapped OSM ways · 2 km AOI selected'):
+    'No OSM motorway geometry available';
+ const panel=L.control({position:'topright'});
+ panel.onAdd=()=>{
+   const div=L.DomUtil.create('div','leaflet-bar');
+   div.style='padding:10px 12px;background:#0d1f29;color:#edfaff;border-radius:8px;box-shadow:0 3px 20px #0008;font:12px/1.65 system-ui;min-width:160px';
+   div.innerHTML='<label for="mapImagery">Background</label><select id="mapImagery" style="display:block;width:100%;background:#213642;color:#fff;border:1px solid #486071;border-radius:5px;padding:5px"><option value="2025">Sentinel · Aug 2025</option><option value="2023">Sentinel · Aug 2023</option><option value="streets">Street map</option></select><label style="display:block;margin-top:7px"><input id="mapEvidence" type="checkbox"> '+(spectralReady?'v0.4 spectral hypotheses':'Legacy vegetation candidates')+'</label><small style="color:#a9c4d0">10 m native pixels<br/>No construction certainty</small>';
+   L.DomEvent.disableClickPropagation(div);
+   L.DomEvent.disableScrollPropagation(div);
+   const sel=div.querySelector('#mapImagery'),box=div.querySelector('#mapEvidence');
+   sel.addEventListener('change',()=>{
+     if(map.hasLayer(beforeImg))map.removeLayer(beforeImg);
+     if(map.hasLayer(afterImg))map.removeLayer(afterImg);
+     if(sel.value==='2023')beforeImg.addTo(map);
+     if(sel.value==='2025')afterImg.addTo(map);
+     track.bringToFront();
+     if(map.hasLayer(evidence))evidence.bringToFront();
+     if(road)road.bringToFront();
+   });
+   box.addEventListener('change',()=>{
+     if(box.checked){evidence.addTo(map);if(road)road.bringToFront()}
+     else if(map.hasLayer(evidence))map.removeLayer(evidence);
+   });
+   return div;
+ };
+ panel.addTo(map);
+ setTimeout(()=>map.invalidateSize(),100);
+}
+function renderTimeline(series){
+ const rows=series.filter(x=>Number.isFinite(x.corridor_ndvi));
+ if(!rows.length){el('timeline').textContent='No usable NDVI profile: road corridor not mapped or no cloud-free scenes.';return}
+ const W=760,H=250,L=50,R=18,T=18,B=52;
+ const xs=year=>L+(year-2022)/4*(W-L-R);
+ const ys=v=>T+(.9-v)/1.1*(H-T-B);
+ const line=(field,color)=>series.filter(s=>s[field]!==null&&s[field]!==undefined).map(s=>[xs(s.year),ys(s[field]),s]).map((p,i)=>i?'L'+p[0]+','+p[1]:'M'+p[0]+','+p[1]).join(' ');
+ let svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Five-year median NDVI on A0 mapped corridor and nearby control land">';
+ for(const v of [-.2,0,.2,.4,.6,.8]){const y=ys(v);svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#344754" stroke-width="1"/><text x="7" y="'+(y+4)+'" font-size="12" fill="#9db8c5">'+v.toFixed(1)+'</text>'}
+ for(let y=2022;y<=2026;y++){svg+='<text x="'+xs(y)+'" y="'+(H-24)+'" fill="#a7c0ce" font-size="13" text-anchor="middle">'+y+'</text>'}
+ svg+='<path d="'+line('control_ndvi')+'" fill="none" stroke="#e2a45a" stroke-width="3"/>';
+ svg+='<path d="'+line('corridor_ndvi')+'" fill="none" stroke="#39d8ba" stroke-width="3"/>';
+ for(const item of series){for(const [key,color] of [['corridor_ndvi','#39d8ba'],['control_ndvi','#e2a45a']]){
+   if(item[key]===null||item[key]===undefined)continue;
+   svg+='<circle cx="'+xs(item.year)+'" cy="'+ys(item[key])+'" r="5" fill="'+color+'"><title>'+item.year+': '+item[key]+' NDVI ('+escapeHtml(item.date||'unknown date')+')</title></circle>'
+ }}svg+='</svg>';
+ el('timeline').innerHTML=svg;
+}
+
+
+let reviewQueue=null,reviewFilter="all",selectedReviewId=null,quickReviewApp=null;
+const categoryFilters={
+ reviewBare:"persistent_bare_hypothesis",
+ reviewSeasonal:"seasonal_regrowth_hypothesis",
+ reviewStable:"stable_control_hypothesis"
+};
+for(const [buttonId,value] of Object.entries({reviewAll:"all",...categoryFilters})){
+ el(buttonId).addEventListener("click",()=>{
+   reviewFilter=value;
+   for(const id of ["reviewAll","reviewBare","reviewSeasonal","reviewStable"])
+      el(id).classList.toggle("active",id===buttonId);
+   renderReviewQueue();
+ });
+}
+async function loadReviewQueue(){
+ try{
+   const response=await fetch('review_queue_v06.json',{cache:'no-store'});
+   if(!response.ok)throw Error('No published suggestion dataset');
+   reviewQueue=await response.json();
+   if(reviewQueue.status!=='review_candidates_not_ground_truth' ||
+      reviewQueue.signature!==labPack.signature || reviewQueue.study_id!==labPack.study_id)
+      throw Error('Suggestions do not match the loaded real satellite scene IDs');
+   el('reviewStatus').textContent=reviewQueue.candidate_count+' unverified review targets';
+   renderReviewQueue();
+   if (window.InfraQuickLabel) {
+     try {
+       quickReviewApp=window.InfraQuickLabel.createApp({
+         queue:reviewQueue,
+         pack:labPack,
+         onSelect:(item,navigateMap)=>{
+           selectedReviewId=item.id;
+           selectPixel(item.row,item.col);
+           if (navigateMap && mapRef && typeof L!=='undefined') {
+             const point=L.latLng(item.lat,item.lon);
+             mapRef.setView(point,Math.max(15,mapRef.getZoom()));
+             if(markerRef)mapRef.removeLayer(markerRef);
+             markerRef=L.circleMarker(point,{
+               radius:7,weight:2,color:'#fff',fillColor:'#f6ae48',fillOpacity:1
+             }).addTo(mapRef);
+           }
+         },
+         onVerify:(item,label)=>{
+           selectPixel(item.row,item.col);
+           el('labelClass').value=label;
+           el('labelSite').value=item.site_group_suggestion ||
+             ('block_r'+String(Math.floor(item.row/25)).padStart(2,'0')+
+              '_c'+String(Math.floor(item.col/25)).padStart(2,'0'));
+           el('evidencePanel').style.display='block';
+           el('labelMessage').textContent='Your quick classification is still provisional. Add independent dated evidence to submit this one verified example.';
+           el('evidencePanel').scrollIntoView({behavior:'smooth',block:'start'});
+         }
+       });
+     } catch(err) {
+       el('quickReviewStatus').textContent='Quick Review could not load: '+err.message;
+       console.error('Quick Review initialization failed',err);
+     }
+   } else {
+     el('quickReviewStatus').textContent='Quick Review script is unavailable. Reload the site; advanced inspection still works.';
+   }
+ }catch(e){
+   reviewQueue=null;
+   el('reviewStatus').textContent='Review suggestions unavailable';
+   el('quickReviewStatus').textContent='Quick Review unavailable: '+e.message;
+   el('quickCandidateName').textContent='No real satellite candidates available';
+   el('reviewSourceHint').textContent=e.message+' — manual map/pixel inspection still works.';
+ }
+}
+function renderReviewQueue(){
+ const list=el('reviewQueueList');
+ list.replaceChildren();
+ if(!reviewQueue)return;
+ const items=reviewQueue.items.filter(item=>reviewFilter==='all'||item.category===reviewFilter);
+ if(!items.length){
+   list.textContent='No candidate pixels matched this spectral heuristic. This is not proof that no changes occurred.';
+   return;
+ }
+ for(const item of items){
+   const button=document.createElement('button');
+   button.type='button';
+   button.className='review-target'+(selectedReviewId===item.id?' active':'');
+   const title=document.createElement('strong');
+   title.textContent=item.title;
+   const sub=document.createElement('small');
+   sub.textContent=item.id+' · '+item.site_group_suggestion+' · row '+item.row+', col '+item.col;
+   const descr=document.createElement('span');
+   descr.textContent='Inspect real measured pixel; NOT a ground-truth label.';
+   button.append(title,sub,descr);
+   button.onclick=()=>{
+     selectedReviewId=item.id;
+     selectPixel(item.row,item.col);
+     if(mapRef&&typeof L!=='undefined'){
+       const location=L.latLng(item.lat,item.lon);
+       mapRef.setView(location,Math.max(mapRef.getZoom(),15));
+       if(markerRef)mapRef.removeLayer(markerRef);
+       markerRef=L.circleMarker(location,{radius:6,weight:2,color:'#fff',fillColor:'#ffb858',fillOpacity:1}).addTo(mapRef);
+     }
+     el('reviewSourceHint').textContent=item.description+' · Geographic point '+item.lat+', '+item.lon+'. Map context does NOT verify construction.';
+     const pointUrl='https://www.openstreetmap.org/?mlat='+item.lat+'&mlon='+item.lon+'#map=18/'+item.lat+'/'+item.lon;
+     el('reviewSourceHint').append('  ');
+     const link=document.createElement('a');
+     link.href=pointUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='View precise location on OSM (context only)';
+     el('reviewSourceHint').append(link);
+     renderReviewQueue();
+     el('sampleInfo').scrollIntoView({behavior:'smooth',block:'center'});
+   };
+   list.append(button);
+ }
+}
+async function initValidation(data){
+ const status=el('modelStatus');
+ if(data.v05?.status!=='ready'){
+   status.textContent='VALIDATION DATA UNAVAILABLE — '+(data.v05?.message||'Four source observations not loaded');
+   el('sampleInfo').textContent='Real Sentinel-2 pixel measurements could not be loaded.';
+   return;
+ }
+ try{
+   const response=await fetch('inspection_v05.json',{cache:'no-store'});
+   if(!response.ok)throw Error('Pixel measurements unavailable');
+   labPack=await response.json();
+   if(labPack.signature!==data.v05.signature || labPack.width!==200 || labPack.height!==200){
+     throw Error('Pixel data provenance does not match this satellite run');
+   }
+   rawArrays={};
+   for(const [name,base64] of Object.entries(labPack.arrays)){
+     const bytes=atob(base64);
+     const buffer=new Uint8Array(bytes.length);
+     for(let i=0;i<bytes.length;i++)buffer[i]=bytes.charCodeAt(i);
+     rawArrays[name]=buffer;
+   }
+   const w=atob(labPack.worldcover), c=atob(labPack.corridor);
+   worldClasses=Uint8Array.from(w,ch=>ch.charCodeAt(0));
+   corridorMask=Uint8Array.from(c,ch=>ch.charCodeAt(0));
+   el('sampleInfo').textContent='Ready. Click a pixel on the map, enable image inspection, or choose one of the suggested investigation points below. Measurements are real, labels are not assumed.';
+   await loadReviewQueue();
+ }catch(e){
+   labPack=null;
+   status.textContent='PIXEL INSPECTOR UNAVAILABLE — '+e.message;
+   return;
+ }
+ try{
+   const response=await fetch('validation_v05.json',{cache:'no-store'});
+   if(!response.ok)throw Error('No training evaluation artifact');
+   const validation=await response.json();
+   if(validation.status==='needs_labels'){
+     const counts=validation.counts_by_class||{};
+     const groups=validation.independent_groups_by_class||{};
+     status.textContent='NO MODEL FITTED · '+(validation.ground_truth_label_count||0)+' owner-reviewed labels accepted for this imagery. Need ≥'+validation.minimum_samples_per_class+' labels and ≥'+validation.minimum_geographic_groups_per_class+' separate sites PER class.';
+     el('modelMetrics').textContent=['construction','agriculture','unchanged']
+       .map(k=>k+': '+(counts[k]||0)+' labels / '+(groups[k]||0)+' sites').join('   |   ');
+   }else if(validation.status==='experimental_model'){
+     status.textContent='EXPERIMENTAL MODEL · Small independently held-out geographic-site test only. Generalization NOT demonstrated.';
+     const classes=validation.class_names||[];
+     let html='<p>Train: '+validation.n_train+' labels · Holdout: '+validation.n_test+' labels · Balanced accuracy on these sites: '+validation.balanced_accuracy+'</p>';
+     html+='<table class="validation-matrix"><caption>Confusion matrix: rows true class, columns predicted</caption><tr><th>True \\ predicted</th>'+classes.map(c=>'<th>'+escapeHtml(c)+'</th>').join('')+'</tr>';
+     for(let i=0;i<classes.length;i++)html+='<tr><th>'+escapeHtml(classes[i])+'</th>'+validation.confusion_matrix[i].map(x=>'<td>'+x+'</td>').join('')+'</tr>';
+     html+='</table>';
+     html+='<p>'+classes.map(c=>escapeHtml(c)+' precision '+validation.precision[c]+' / recall '+validation.recall[c]).join(' · ')+'</p>';
+     el('modelMetrics').innerHTML=html;
+   }else{
+     status.textContent='NO VERIFIED MODEL · '+(validation.message||validation.status||'Validation not ready');
+   }
+ }catch(e){status.textContent='No validation evaluation available: '+e.message}
+}
+
+function signalAt(name,i,pixel){
+ const x=rawArrays?.[name+'_'+i]?.[pixel];
+ return x===undefined||x===255?null:+(x/127-1).toFixed(3);
+}
+function selectPixel(row,col,location){
+ if(!labPack || !rawArrays){
+   el('labelMessage').textContent='Pixel data have not loaded; no annotation can be submitted.';
+   return;
+ }
+ if(!Number.isInteger(row)||!Number.isInteger(col)||row<0||col<0||row>=labPack.height||col>=labPack.width){
+   el('labelMessage').textContent='Select a point inside the 2 km satellite study rectangle.';
+   return;
+ }
+ chosenSample={row,col};
+ el('labelSite').value='block_r'+String(Math.floor(row/25)).padStart(2,'0')+'_c'+String(Math.floor(col/25)).padStart(2,'0');
+ const pixel=row*labPack.width+col;
+ const landNames={10:'Tree cover',20:'Shrubland',30:'Grassland',40:'Cropland',50:'Built-up',
+                   60:'Bare/sparse',70:'Snow/ice',80:'Water',90:'Wetland',95:'Mangroves',100:'Moss/lichen'};
+ const classCode=worldClasses[pixel]||0;
+ el('sampleInfo').innerHTML='<b>Selected 10 m study pixel: row '+row+', column '+col+'</b><div class="labhint">WorldCover 2021: '+escapeHtml(landNames[classCode]||'Unknown')+' (code '+classCode+') · In mapped A0 ±130 m buffer: '+(corridorMask[pixel]?'Yes':'No')+' · Original source data, not manual ground truth</div>';
+ el('sampleMetrics').innerHTML=labPack.dates.map((item,i)=>{
+   const formatted=['ndvi','bsi','ndbi'].map(name=>{
+     const v=signalAt(name,i,pixel);
+     return name.toUpperCase()+': '+(v===null?'no data':v.toFixed(2));
+   }).join('<br>');
+   return '<div class="sample-cell">'+escapeHtml(item.date)+'<b>'+formatted+'</b></div>';
+ }).join('');
+ el('submitLabel').disabled=false;
+ el('labelMessage').textContent='Selected: ('+row+', '+col+'). Add independent dated evidence and open a GitHub issue when ready.';
+ if(location&&mapRef&&typeof L!=='undefined'){
+   if(markerRef)mapRef.removeLayer(markerRef);
+   markerRef=L.circleMarker(location,{radius:6,weight:2,color:'#fff',fillColor:'#edb755',fillOpacity:1}).addTo(mapRef);
+ }
+}
+el('submitLabel').addEventListener('click',()=>{
+ if(!labPack || !chosenSample){el('labelMessage').textContent='Select a pixel first.';return}
+ const cls=el('labelClass').value,site=el('labelSite').value.trim();
+ const url=el('labelUrl').value.trim(),date=el('labelDate').value;
+ const note=el('labelNote').value.trim(),attest=el('labelAttestation').checked;
+ if(!/^[A-Za-z0-9_-]{4,64}$/.test(site)){
+   el('labelMessage').textContent='Site group must be 4-64 letters, numbers, - or _. Use the SAME group for pixels from the same location.';return
+ }
+ let parsed;
+ try{parsed=new URL(url)}catch{el('labelMessage').textContent='Enter the full URL of independent dated evidence.';return}
+ if(!['https:','http:'].includes(parsed.protocol)||!date||date>new Date().toISOString().slice(0,10)||note.length<12||!attest){
+   el('labelMessage').textContent='Evidence must have an HTTP(S) link, date not in the future, a description (12+ characters), and your explicit confirmation.';return
+ }
+ const annotation={
+   study_id:labPack.study_id,signature:labPack.signature,
+   row:chosenSample.row,col:chosenSample.col,
+   label:cls,site_group:site,question_version:"change-types-v2",evidence_url:url,evidence_date:date,
+   note:note,attestation:true
+ };
+ const ticks=String.fromCharCode(96).repeat(3);
+ const body='Source-backed research annotation, owner attested; not independently audited.\n\n'+ticks+'infratrack-label\n'+JSON.stringify(annotation,null,2)+'\n'+ticks+'\n\nPlease verify date and independent evidence.';
+ const title='[InfraTrack label] '+cls+' '+site+' pixel '+chosenSample.row+','+chosenSample.col;
+ const issueUrl=new URL('https://github.com/RazvanJuncu/infratrack/issues/new');
+ issueUrl.searchParams.set('title',title);issueUrl.searchParams.set('body',body);
+ window.open(issueUrl.toString(),'_blank','noopener');
+ el('labelMessage').textContent='GitHub issue composer opened. Submit it there to record this annotation. This page cannot submit on your behalf.';
+});
+function escapeHtml(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
+start();
+</script>
+</body></html>
