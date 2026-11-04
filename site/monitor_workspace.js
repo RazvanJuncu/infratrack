@@ -17,7 +17,7 @@ let slots={before:null,after:null};
 let cached=new Map(),inflight=new Map();
 let chosenMapPoint=null,leafletMap=null,leafletRect=null;
 let catalogSeq=0,viewSeq=0,activeToken=null;
-let highlighted=false,loadedPair=null,latestBusy=false;
+let highlighted=false,loadedPair=null,latestBusy=false,highlightRevision=0;
 let lastTap=null;
 function status(message){$("canvasStatus").textContent=message}
 function notice(message){
@@ -177,6 +177,7 @@ function renderTimeline(){
  }
 }
 function cancelView(){
+ highlightRevision++;
  viewSeq++;
  if(activeToken)activeToken.aborted=true;
  activeToken=null;
@@ -284,17 +285,45 @@ async function cropScene(item,token,allowCloudy=true){
  renderTimeline();
  return img;
 }
-function applyHighlight(){
+function decodePreviewPixels(dataUrl,width,height){
+ return new Promise((resolve,reject)=>{
+   const image=new Image();
+   image.onload=()=>{
+     try{
+       const canvas=document.createElement("canvas");
+       canvas.width=width;canvas.height=height;
+       const ctx=canvas.getContext("2d",{willReadFrequently:true});
+       if(!ctx)throw Error("Canvas pixel decoding is unavailable");
+       ctx.drawImage(image,0,0,width,height);
+       resolve(ctx.getImageData(0,0,width,height).data);
+     }catch(err){reject(err)}
+   };
+   image.onerror=()=>reject(Error("Cannot decode stored satellite preview"));
+   image.src=dataUrl;
+ });
+}
+async function applyHighlight(){
  const button=$("highlightBtn"),layer=$("changeLayer");
  button.disabled=!(loadedPair&&loadedPair.length===2);
- if(!highlighted||!loadedPair||loadedPair.length!==2){
+ const revision=++highlightRevision;
+ const pair=loadedPair;
+ if(!highlighted||!pair||pair.length!==2){
    layer.hidden=true;
    $("changeSummary").textContent="Experimental visual difference, not AI classification.";
    return;
  }
+ layer.hidden=true;
+ $("changeSummary").textContent="Examining aligned satellite pixels…";
  try{
-   const [before,after]=loadedPair;
-   const diff=core.rgbDifference(before.rgba,after.rgba,48);
+   const [before,after]=pair;
+   if(before.width!==after.width||before.height!==after.height)
+     throw Error("Satellite observations do not have identical image dimensions");
+   const [oldBytes,newBytes]=await Promise.all([
+     core.alignedRGBA(before,decodePreviewPixels),
+     core.alignedRGBA(after,decodePreviewPixels)
+   ]);
+   if(revision!==highlightRevision||!highlighted||loadedPair!==pair)return;
+   const diff=core.rgbDifference(oldBytes,newBytes,48);
    layer.width=before.width;layer.height=before.height;
    const ctx=layer.getContext("2d");
    if(!ctx)throw Error("Canvas rendering unavailable");
@@ -304,8 +333,9 @@ function applyHighlight(){
    $("changeSummary").textContent=diff.percent===null?
      "Insufficient comparable RGB pixels":
      diff.percent+"% of valid RGB pixels exceed the experimental visual threshold. "+
-       "This is NOT trained AI: crops, clouds, lighting and seasonal changes can be highlighted.";
+       "This is NOT trained AI: crops, clouds, illumination and seasonal changes may be highlighted.";
  }catch(err){
+   if(revision!==highlightRevision||!highlighted||loadedPair!==pair)return;
    layer.hidden=true;
    $("changeSummary").textContent="Difference overlay unavailable: "+err.message;
  }
