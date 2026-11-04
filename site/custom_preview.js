@@ -174,8 +174,49 @@ async function render(area,items,options={}){
        "Locally cloud-check could not be completed for both dates; interpret cautiously.":
        "Both image crops passed local Sentinel scene-classification screening."};
 }
+// Explicit scene selection does not substitute another date or scene ID.
+// The exact STAC item behind each selected acquisition card is rendered.
+function exactSelection(items) {
+ if(!Array.isArray(items)||items.length<1||items.length>2)
+   throw Error("Choose one or two acquisition dates");
+ const ids=new Set();
+ for(const item of items){
+   if(!item||typeof item.id!=="string"||!itemDate(item)||
+      !urlAsset(item,"visual")||ids.has(item.id))
+     throw Error("Selected observation has no unique real Sentinel visual asset");
+   ids.add(item.id);
+ }
+ return items.slice().sort((a,b)=>a.properties.datetime.localeCompare(b.properties.datetime));
+}
+async function renderSelected(area,items,options={}) {
+ if(!global.GeoTIFF||!global.proj4)
+   throw Error("Satellite viewer scripts unavailable. Please reload the page.");
+ const selected=exactSelection(items);
+ const rendered=[];
+ const signal=options.signal;
+ for(const item of selected){
+   if(signal?.aborted)throw Error("Cancelled");
+   options.onProgress?.("Loading the exact Sentinel-2 observation from "+itemDate(item)+"…");
+   // Any individual scene failure is returned to the user, not replaced by
+   // another scene with a different timestamp.
+   try {
+     rendered.push(await previewOne(item,area,global.GeoTIFF,global.proj4,signal));
+   } catch(err) {
+     if(signal?.aborted)throw Error("Cancelled");
+     throw Error("Cannot display the selected "+itemDate(item)+" scene: "+err.message);
+   }
+ }
+ return {count:rendered.length,dates:rendered.map(x=>x.date),
+   scenes:rendered,
+   locallyScreened:rendered.every(x=>x.cloudFraction!==null),
+   note:rendered.every(x=>x.cloudFraction!==null)?
+     "Both locally screened where applicable. Cloud cover percentages on cards are whole-scene values.":
+     "At least one local cloud mask was unavailable; the selected scene(s) may include clouds.",
+   selectionIsExact:true};
+}
+
 const core={G,itemDate,urlAsset,isUTM,UTMDefinition,geoBounds,
-  projectedBounds,localClear,chooseItems,pixelWindow,render};
+  projectedBounds,localClear,chooseItems,pixelWindow,render,exactSelection,renderSelected};
 if(typeof module==="object"&&module.exports)module.exports=core;
 global.InfraCustomPreview=core;
 })(typeof window!=="undefined"?window:globalThis);
