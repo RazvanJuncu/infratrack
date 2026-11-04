@@ -94,9 +94,11 @@ async function previewOne(item,area,GeoTIFF,proj4,signal){
  if(signal?.aborted)throw Error("Cancelled");
  if(vals.length!==size*size*3)throw Error("Unexpected raster samples");
  const bytes=new Uint8ClampedArray(size*size*4);
- const imtype=im.getSampleFormat?.()||1;
+ const type=im.getSampleFormat?.()||1;
+ const imtype=Array.isArray(type)?type[0]:type;
  const bps=im.getBitsPerSample();
- const byteRGB=(!Array.isArray(bps)||bps[0]===8)&&imtype===1;
+ const bits=Array.isArray(bps)?bps[0]:bps;
+ const byteRGB=bits===8&&imtype===1;
  if(!byteRGB)throw Error("Visual COG is not 8-bit RGB; cannot display faithfully");
  let visible=0;
  for(let i=0;i<size*size;i++){
