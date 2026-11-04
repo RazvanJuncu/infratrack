@@ -123,3 +123,22 @@ The four-button logic has no paid services and runs entirely in static JavaScrip
 The simple Training screen now asks **"What changed between BEFORE and AFTER?"**, not "What sort of land is this?". The choices are *Construction change*, *Agricultural change*, *No significant change*, and *Can't tell*. Farmland may be unchanged when both images show essentially the same field; agricultural change requires visible crop/harvest/ploughing change rather than mere agricultural land use.
 
 Because earlier review rounds were collected under an ambiguous land-use/change question, those v1 drafts are **preserved in their original browser localStorage namespace**, but **never interpreted as v2 change classifications**. New entries use the separate `infratrack:quick-review:v2:change-types:` namespace and export with `question_version: "change-types-v2"`. Previous exported JSON files remain historical exploratory responses; no automatic conversion or model training from them. The source-verified issue intake and model-training gate also reject labels that lack the revised explicit question version. Resubmission under the revised question and independent dated evidence is necessary for training.
+
+
+## v0.8 — Monitor + recent change training
+
+**Monitor (home)**:
+- Map-first European study-area selection, 2×2 km square, name and interest type. Custom watchlists are kept only in the same browser's localStorage (up to 50); no account, paid service or false claims of permanent cloud processing.
+- For ANY user-selected European area, the public Element84 Earth Search STAC catalog is queried on page load and on manual Refresh; show source-dated **acquisition metadata** for 30, 90 or 180 days. Cloud percentages are for the entire Sentinel scene; catalog acquisitions do not guarantee locally cloud-free imagery. These client-side fetches depend on browser CORS and availability of the public catalog.
+- For FIVE registered Romanian AOIs with processing enabled, a GitHub Actions job additionally downloads true-color crops from two independent recent, locally cloud-screened Sentinel-2 scenes (up to 115 days back), showing dates and real scene IDs. If it cannot find a usable pair, report unavailable/fallback rather than inventing recent imagery.
+- Scheduled **daily** Github Actions workflow refreshes registered sites; this is not yet automated image processing for arbitrary browser-saved user AOIs, and is not a verified construction alert service. The browser rechecks public metadata on opening, Refresh or once an hour while visible. **No push/email alerts**.
+- Research preview detection uses 5×5 patches of absolute NDVI or RGB reflectance change from recent observed data; groups selected at least ~200m apart. Cloud-masked pixels are excluded, and candidate labels are **never inferred** from magnitude alone.
+
+**Training (separate tab)**:
+- The queue is generated from actual recent significant-change candidates, not a random land-use snapshot or historical 2023/2025 examples.
+- Two questions per candidate: **What appears to have changed?** (construction activity / agriculture / vegetation or land-cover / other / no meaningful change / can't tell) and **How confident?** (confident / somewhat / not very). "Can't tell" skips the confidence question. The detector does **not** assert candidate causes or worksite status.
+- All review responses remain local browser drafts under a **separate source-scene-specific key**. JSON export explicitly says not ground truth and not eligible for ML training. No trained model or accuracy claim is implied.
+- Legacy 4-button and independently evidenced review UI remains accessible via a separate advanced link. It is not mixed with new recent questions.
+- A later phase must safely support server-side processing of arbitrary user AOIs, automated verified labels, geographic holdout and server-side alert delivery. **Do not conflate the metadata-only personal watchlist with such a production service.**
+
+Sentinel-2 nominal satellite revisit is ~5 days at the equator, generally more frequent at European latitudes, but visible cloud-free observations can be much farther apart. We process only when usable actual scenes exist.
