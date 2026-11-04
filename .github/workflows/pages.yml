@@ -22,11 +22,11 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Run deterministic tests
         run: python -m unittest discover -s tests -v
-      - name: Download and analyze real Sentinel-2
+      - name: Resolve mapped corridor and analyze real Sentinel-2
         shell: bash
         run: |
           set +e
-          python infratrack.py --lat 44.5128 --lon 26.2795 --size-km 2 --before 2023-06-01/2023-08-31 --after 2025-06-01/2025-08-31 --max-cloud 35 --output site
+          python infratrack.py --lat 44.5065 --lon 26.2328 --size-km 2 --before 2023-06-01/2023-08-31 --after 2025-06-01/2025-08-31 --max-cloud 35 --output site
           status=$?
           set -e
           if [ "$status" -ne 0 ]; then
