@@ -76,10 +76,10 @@
      <h3 id="quickCandidateName" style="font-size:19px;margin:5px 0">Loading suggested location…</h3>
      <p class="quick-muted" id="quickCandidateDetail">Satellite data loading</p>
      <div class="quick-actions" aria-label="Provisional visual classification choices">
-       <button type="button" class="quick-choice" id="quickConstruction">🏗️ Construction</button>
-       <button type="button" class="quick-choice" id="quickAgriculture">🌾 Agriculture</button>
-       <button type="button" class="quick-choice" id="quickUnchanged">◻ Unchanged</button>
-       <button type="button" class="quick-choice" id="quickUnsure">? Unsure / Skip</button>
+       <button type="button" class="quick-choice" id="quickConstruction">🏗️ Construction change</button>
+       <button type="button" class="quick-choice" id="quickAgriculture">🌾 Agricultural change</button>
+       <button type="button" class="quick-choice" id="quickUnchanged">◻ No significant change</button>
+       <button type="button" class="quick-choice" id="quickUnsure">? Can’t tell</button>
      </div>
      <p id="quickDraftState" class="quick-muted">Not classified</p>
      <div class="quick-mini-controls">
@@ -161,7 +161,7 @@
     <h2 style="margin-bottom:8px">Verify with independent evidence</h2>
     <p class="quick-muted">Only verified labels are eligible to be evaluated for model training. Quick selections never count automatically.</p>
     <label class="field">Ground-truth class
-      <select id="labelClass"><option value="construction">Construction change</option><option value="agriculture">Agricultural or harvest change</option><option value="unchanged">Unchanged surface</option></select>
+      <select id="labelClass"><option value="construction">Construction change</option><option value="agriculture">Agricultural or harvest change</option><option value="unchanged">No significant change</option></select>
     </label>
     <label class="field">Independent site group (same physical site = same ID)
       <input id="labelSite" maxlength="64" placeholder="e.g. a0_interchange_east_01"/>
@@ -553,7 +553,7 @@ el('submitLabel').addEventListener('click',()=>{
  const annotation={
    study_id:labPack.study_id,signature:labPack.signature,
    row:chosenSample.row,col:chosenSample.col,
-   label:cls,site_group:site,evidence_url:url,evidence_date:date,
+   label:cls,site_group:site,question_version:"change-types-v2",evidence_url:url,evidence_date:date,
    note:note,attestation:true
  };
  const ticks=String.fromCharCode(96).repeat(3);
