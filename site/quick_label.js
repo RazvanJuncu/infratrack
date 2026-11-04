@@ -6,7 +6,8 @@
 (function (global) {
   "use strict";
   const CLASS_NAMES = Object.freeze(["construction", "agriculture", "unchanged", "unsure"]);
-  const STORE_PREFIX = "infratrack:quick-review:v1:";
+  const STORE_PREFIX = "infratrack:quick-review:v2:change-types:";
+  const QUESTION_VERSION = "change-types-v2";
 
   function pixelKey(item) {
     if (!item || !Number.isInteger(item.row) || !Number.isInteger(item.col)) {
@@ -24,7 +25,8 @@
     return item && item.status === "provisional_not_ground_truth"
       && item.study_id === studyId && item.signature === signature
       && item.row === candidate.row && item.col === candidate.col
-      && CLASS_NAMES.includes(item.label);
+      && CLASS_NAMES.includes(item.label)
+      && item.question_version === QUESTION_VERSION;
   }
   function readDrafts(storage, studyId, signature, candidates) {
     const byPixel = {};
@@ -38,6 +40,7 @@
       const payload = JSON.parse(raw);
       if (payload.type !== "provisional_review" ||
           payload.study_id !== studyId || payload.signature !== signature ||
+          payload.question_version !== QUESTION_VERSION ||
           !Array.isArray(payload.items)) return byPixel;
       for (const draft of payload.items) {
         const key = pixelKey(draft);
@@ -50,6 +53,8 @@
   function asPayload(byPixel, studyId, signature) {
     return {
       type: "provisional_review", study_id: studyId, signature: signature,
+      question_version: QUESTION_VERSION,
+      question: "What changed between the before and after satellite observations?",
       eligible_for_training: false, verified_count: 0,
       disclaimer: "Unverified user impressions. NOT training labels. Require independent dated evidence.",
       items: Object.values(byPixel).sort((a,b) => a.row - b.row || a.col - b.col)
@@ -131,7 +136,7 @@
         storage.setItem(storageKey(pack.study_id, pack.signature),
                         JSON.stringify(asPayload(drafts, pack.study_id, pack.signature)));
         get("quickPersistence").textContent =
-          "Saved on this browser only. Not synced to GitHub or AI training.";
+          "Saved locally under the clarified change-type question. Earlier rounds are untouched and kept separate.";
         return true;
       } catch (err) {
         get("quickPersistence").textContent =
@@ -160,6 +165,7 @@
         row:item.row,col:item.col, label:label,
         study_id:pack.study_id, signature:pack.signature,
         candidate_id:item.id,
+        question_version:QUESTION_VERSION,
         status:"provisional_not_ground_truth",
         annotated_at:new Date().toISOString(),
         evidence_url:null,training_eligible:false
@@ -185,7 +191,7 @@
       const item = current();
       const draft = item && drafts[pixelKey(item)];
       if (!draft || draft.label==="unsure") {
-        feedback="Choose Construction, Agriculture or Unchanged first. Unsure cannot be verified.";
+        feedback="Choose a change category first. Can’t tell is never used as verified training data.";
         render();return;
       }
       if (typeof config.onVerify === "function") config.onVerify(item,draft.label);
@@ -198,7 +204,7 @@
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href=url;
-      anchor.download="infratrack-provisional-"+pack.signature+".json";
+      anchor.download="infratrack-change-review-"+pack.study_id+"-"+pack.signature+".json";
       document.body.append(anchor);anchor.click();anchor.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1500);
       feedback="Backup exported. This JSON is not a training dataset.";
@@ -248,7 +254,7 @@
       get("quickExport").disabled=!reviewed;
       Object.keys(controls).forEach(id=>get(id).disabled=!item);
       get("quickReviewStatus").textContent=feedback ||
-        "Fast choices are provisional. Only source-verified labels can train the AI.";
+        "Classify what changed, not the original land type. Quick choices are unverified.";
       if (!item) {
         get("quickCandidateName").textContent="No candidate points were loaded";
         get("quickCandidateDetail").textContent="Satellite observations not ready.";
@@ -262,7 +268,7 @@
         item.id+" · row "+item.row+", col "+item.col+
         " · "+(item.within_road_buffer?"Near mapped A0":"Outside mapped corridor");
       get("quickDraftState").textContent=draft?
-        "Your draft: "+draft.label.toUpperCase()+" · unverified":"Not classified yet";
+        "Your change review: "+({construction:"CONSTRUCTION CHANGE",agriculture:"AGRICULTURAL CHANGE",unchanged:"NO SIGNIFICANT CHANGE",unsure:"CAN’T TELL"}[draft.label]) + " · unverified":"Not classified yet";
       get("quickVerify").disabled=!draft || draft.label==="unsure";
       for(const [id,label] of Object.entries(controls)) {
         get(id).classList.toggle("chosen",Boolean(draft && draft.label===label));
