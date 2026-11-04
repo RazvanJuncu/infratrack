@@ -1,166 +1,96 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>InfraTrack · Explore</title>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InfraTrack · Monitor</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{color-scheme:dark;--bg:#0d151c;--surface:#15212a;--border:#2d3d49;--text:#e9f3f8;--muted:#9aadb9;--teal:#49cbb6}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
-header{border-bottom:1px solid var(--border);background:#111d26}
-nav{max-width:1200px;margin:auto;min-height:70px;display:flex;align-items:center;gap:30px;padding:12px 24px}
-.brand{font-weight:850;font-size:22px;letter-spacing:-1px;color:#f6ffff;text-decoration:none}.brand span{color:var(--teal)}
-nav .tabs{display:flex;gap:8px;margin-left:auto}nav .tabs a{padding:8px 14px;border-radius:9px;text-decoration:none;color:var(--muted);font-weight:650}
-nav .tabs a.current{background:#243940;color:#f6fffc}nav .tabs a:hover{color:white}
-main{max-width:1200px;margin:0 auto;padding:30px 24px 72px}
-h1{font-size:clamp(26px,3.5vw,38px);letter-spacing:-1.3px;margin:0 0 7px}h2{font-size:20px;margin:0 0 12px}
-.sub{color:var(--muted);max-width:800px;margin:0 0 26px}
-.section{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:20px;margin:0 0 20px}
-.projects{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:10px;margin:13px 0 0}
-.site-card{text-align:left;color:var(--text);background:#172833;border:1px solid var(--border);padding:14px;border-radius:10px;cursor:pointer;min-height:92px}
-.site-card:hover{border-color:#58887f}.site-card.selected{border-color:var(--teal);background:#1b3738}
-.site-card strong{display:block;font-size:15px}.site-card span{display:block;color:var(--muted);font-size:12px;margin-top:5px}
-.site-card:disabled{cursor:default;opacity:.6}.site-card:disabled:hover{border-color:var(--border)}
-.site-head{display:flex;justify-content:space-between;align-items:start;gap:14px;flex-wrap:wrap}
-.status{padding:5px 10px;border:1px solid var(--border);border-radius:7px;font-size:12px;color:#b8d8d0}
-.dates{display:flex;justify-content:space-between;align-items:center;color:#aac4d0;margin-bottom:10px;font-size:12px}
-.images{display:grid;grid-template-columns:1fr 1fr;gap:15px}
-.image-box{background:#0c1922;border-radius:9px;overflow:hidden;position:relative}
-.image-box img{width:100%;display:block;aspect-ratio:1/1;object-fit:fill}
-.image-box label{position:absolute;top:11px;left:11px;background:#071821dd;color:#f2ffff;font-size:11px;font-weight:750;padding:6px 9px;border-radius:5px}
-.note{font-size:12px;color:var(--muted);margin:11px 0 0}
-.actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:15px}
-.button{display:inline-block;background:var(--teal);color:#09231e;border:0;border-radius:9px;padding:11px 17px;font-weight:800;font-size:14px;text-decoration:none;cursor:pointer}
-.button:hover{background:#79e5d3}
-.link{color:#b5c9d0;text-decoration:underline;text-underline-offset:3px}
-#map{height:390px;border-radius:9px;background:#192b36}details summary{cursor:pointer;font-weight:700;padding:5px 0}
-footer{color:#8ca1ad;font-size:12px;padding:15px 3px}
-.empty{padding:35px 15px;text-align:center;color:var(--muted);background:#0b1720;border-radius:9px}
-@media(max-width:700px){nav{gap:10px;padding:12px 16px;flex-wrap:wrap}nav .tabs{gap:3px}nav .tabs a{padding:7px 9px;font-size:13px}main{padding:23px 14px}.section{padding:14px}.images{gap:8px}.image-box label{left:5px;top:5px;font-size:10px;padding:4px 6px}#map{height:290px}}
+:root{color-scheme:dark;--bg:#0e161d;--panel:#17242d;--border:#31434e;--text:#edf5f8;--muted:#9eafbb;--accent:#5bd2bb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,Segoe UI,sans-serif}
+nav{min-height:68px;border-bottom:1px solid var(--border);padding:13px max(20px,calc((100vw - 1160px)/2));display:flex;align-items:center;gap:20px;background:#121d26}
+.brand{font-size:21px;font-weight:850;letter-spacing:-.8px;color:white;text-decoration:none}.brand span{color:var(--accent)}
+nav .tabs{display:flex;gap:7px;margin-left:auto}nav .tabs a{color:var(--muted);padding:8px 13px;border-radius:8px;font-weight:650;text-decoration:none}
+nav .tabs .active{background:#28413e;color:white}nav .tabs a:hover{color:white}
+main{max-width:1160px;margin:auto;padding:30px 20px 65px}
+h1{font-size:clamp(29px,4vw,39px);letter-spacing:-1.4px;margin:0 0 8px}h2{font-size:19px;margin:0 0 13px}
+.sub{max-width:800px;color:var(--muted);margin:0 0 22px}
+.layout{display:grid;grid-template-columns:265px minmax(0,1fr);gap:17px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:17px;margin-bottom:16px}
+#areaList{display:flex;flex-direction:column;gap:8px;max-height:540px;overflow:auto}
+.area-item{background:#1b303a;color:var(--text);border:1px solid #38505d;text-align:left;border-radius:9px;padding:12px;cursor:pointer}
+.area-item.active{border-color:var(--accent);background:#22413e}
+.area-item strong{display:block;font-size:13px}.area-item small{display:block;color:#9fb4be;margin-top:4px;font-size:11px}
+button{font:650 13px system-ui;cursor:pointer;border:1px solid #4a6371;background:#263d49;border-radius:8px;color:#edf6f8;padding:9px 12px}
+button:hover{background:#315360}button.primary{background:var(--accent);border-color:var(--accent);color:#062921}
+button.primary:hover{background:#81dfcb}
+input,select{width:100%;background:#1b303a;color:white;padding:10px;border:1px solid #4b5f68;border-radius:8px;font:14px system-ui}
+label{color:var(--muted);font-size:12px;font-weight:600;display:block;margin:10px 0}
+label input,label select{display:block;margin-top:5px}
+#map{height:345px;border-radius:10px;background:#203b42}
+.help{font-size:12px;color:var(--muted);line-height:1.6}
+#monitorStatus{padding:10px 12px;background:#19353a;border-radius:8px;font-size:12px;color:#bcdbdf;margin-top:13px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.head p{margin:0;color:var(--muted);font-size:12px}
+.images{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.image{background:#0e1c25;border-radius:8px;overflow:hidden;min-width:0}
+.image img{display:block;width:100%;aspect-ratio:1;object-fit:fill}
+.image small{display:block;padding:8px 10px;color:#b0c8d2;font-size:12px}
+#recentSummary{font-size:13px;color:#91e5d4;margin-top:9px}
+.checkline{font-size:11px;color:var(--muted)}
+.obs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px;margin-top:14px}
+.obs-item{background:#1c303a;border:1px solid #374c58;border-radius:9px;padding:11px}
+.obs-item strong{display:block;font-size:14px}.obs-item span{display:block;color:#9fb4bd;font-size:11px;margin-top:3px}
+.muted{color:var(--muted);font-size:13px}
+.tag{font-size:12px;padding:6px 10px;background:#24413e;border-radius:7px;color:#b5f0e4}
+a{color:#8ce2d0}
+footer{padding:15px 0;color:var(--muted);font-size:12px}
+@media(max-width:820px){.layout{grid-template-columns:1fr}#areaList{max-height:220px;display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}}
+@media(max-width:520px){main{padding:19px 12px}nav{padding:12px;gap:8px;flex-wrap:wrap}nav .tabs{gap:2px}nav .tabs a{padding:7px 10px;font-size:12px}.panel{padding:13px}.images{gap:7px}#map{height:285px}}
 </style>
-</head>
-<body>
-<header><nav>
- <a class="brand" href="./">Infra<span>Track</span></a>
- <div class="tabs"><a class="current" href="./" aria-current="page">Explore</a><a href="training.html">Training</a><a href="technical.html">Technical</a></div>
-</nav></header>
+</head><body>
+<nav><a class="brand" href="./">Infra<span>Track</span></a>
+<div class="tabs"><a href="./" class="active" aria-current="page">Monitor</a><a href="training.html">Training</a><a href="technical.html">Technical</a></div></nav>
 <main>
- <h1>Explore infrastructure from orbit</h1>
- <p class="sub">Real satellite imagery, multiple locations. Compare what changed; nothing here is a verified construction-completion estimate.</p>
- <section class="section" aria-labelledby="chooseTitle">
-  <div class="site-head"><h2 id="chooseTitle">Locations</h2><span id="siteCount" class="status">Loading…</span></div>
-  <div id="sites" class="projects"><div class="empty">Loading satellite study areas…</div></div>
- </section>
- <section class="section" aria-labelledby="sceneTitle">
-   <div class="site-head"><div><h2 id="sceneTitle">Select a location</h2><p class="note" id="siteDescription">Dates, imagery and provenance appear here.</p></div><span class="status" id="imageStatus">—</span></div>
-   <div id="imageContent"><div class="empty">Choose a site above to view real imagery.</div></div>
-   <div class="actions"><a id="trainLink" class="button" href="training.html">Review examples in Training</a><a id="sourceLink" href="#" class="link" target="_blank" rel="noopener noreferrer" hidden>Project background</a></div>
- </section>
- <section class="section">
-   <details id="mapDetails"><summary>Show location on map</summary><p class="note" style="margin-bottom:12px">The rectangle is the analyzed 2 km study area, not the entire road project. Sentinel-2 has 10–20 m native pixels, not aerial-photo detail. Geometry and extent are provisional.</p><div id="map"></div></details>
- </section>
- <footer>InfraTrack Research Alpha · Copernicus Sentinel-2 L2A · © OpenStreetMap contributors · Source dates included · No fabricated detection or completion metrics</footer>
+<h1>Monitor the places that matter</h1>
+<p class="sub">Save a location anywhere in Europe and check recent Sentinel-2 acquisitions. For the registered research sites, see real cloud-screened before/after imagery and suggested changes.</p>
+<div class="layout">
+ <aside>
+  <section class="panel"><h2>Your areas</h2><div id="areaList"><p class="muted">Loading areas…</p></div></section>
+  <section class="panel"><h2>Add an area</h2>
+   <p class="help">Click on the map to select a 2 × 2 km square. Save it with a name — no account required.</p>
+   <button id="pickArea" type="button">Pick on map</button>
+   <p class="help" id="pointCoordinates">No map point selected</p>
+   <label>Area name<input id="areaName" maxlength="60" placeholder="e.g. Our construction site"></label>
+   <label>Interest<select id="areaType"><option value="construction">Construction site</option><option value="farmland">Farm / agricultural land</option><option value="forest">Forest</option><option value="urban">Urban development</option><option value="other">Other area</option></select></label>
+   <button type="button" class="primary" id="saveArea">Save area</button>
+   <p class="help">Custom areas and preferences stay only in this browser. Latest acquisition metadata are checked when you open or refresh this page. Automatic processing of custom satellite images is not active yet.</p>
+  </section>
+ </aside>
+ <div>
+  <section class="panel">
+   <div class="head"><div><h2 id="selectionName">Select an area</h2><p id="selectionKind">2 × 2 km observation window</p></div><button id="deleteArea" type="button" hidden>Remove saved area</button></div>
+   <div id="map" aria-label="Map of European study area locations"></div>
+   <p class="help">Map © OpenStreetMap contributors. The outline marks the selected 2 km square; mapped roads or landmarks do not confirm construction activity.</p>
+   <div id="monitorStatus" role="status">Select a location to monitor.</div>
+  </section>
+  <section class="panel">
+   <div class="head"><h2>Recent satellite comparison</h2><span class="tag">Real Sentinel-2 imagery</span></div>
+   <div id="pair" class="images" hidden>
+    <div class="image"><img id="beforeImage" alt="Older real Sentinel-2 image of the selected area"><small id="beforeDate">Before</small></div>
+    <div class="image"><img id="afterImage" alt="More recent real Sentinel-2 image of the selected area"><small id="afterDate">After</small></div>
+   </div>
+   <div id="recentSummary"></div>
+   <p id="imageNote" class="help">Choose a registered area to see an independently processed image pair.</p>
+  </section>
+  <section class="panel">
+   <div class="head"><h2>Satellite observation history</h2><div style="display:flex;gap:8px;align-items:center"><select id="timeRange" aria-label="Observation time window" style="width:auto"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option></select><button type="button" id="refresh">Refresh</button></div></div>
+   <p class="help">Dates are direct from the live public satellite catalog. Cloud percentages describe the entire satellite scene, not necessarily the selected square. An acquisition may be unusable locally due to clouds.</p>
+   <div id="checkedAt" class="checkline">Not checked yet</div>
+   <div id="observations" class="obs-grid"></div>
+  </section>
+ </div>
+</div>
+<footer>InfraTrack research · European coverage via public Sentinel-2 acquisition metadata · 10–20 m pixels · No automatic construction claims or guaranteed cloud-free observations · <a href="training.html">Help review significant changes</a></footer>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-"use strict";
-const $=id=>document.getElementById(id);
-let manifest=null,selected=null,map=null,mapLayer=null,studyBox=null;
-const requested=new URLSearchParams(location.search).get("site");
-const validId=s=>/^[a-z0-9-]{3,64}$/.test(s);
-function setStatus(node,text){node.textContent=text}
-function makeCard(site){
-  const button=document.createElement("button");
-  button.type="button";
-  button.className="site-card"+(site.id===selected?.id?" selected":"");
-  button.disabled=site.status!=="ready";
-  const title=document.createElement("strong");
-  title.textContent=site.name;
-  const subtitle=document.createElement("span");
-  subtitle.textContent=site.status==="ready"?
-     site.region+" · Real scenes ready":site.region+" · Data unavailable";
-  button.append(title,subtitle);
-  if(!button.disabled)button.onclick=()=>chooseSite(site.id);
-  return button;
-}
-function cards(){
- $("sites").replaceChildren(...manifest.sites.map(makeCard));
- $("siteCount").textContent=manifest.ready_count+" of "+manifest.site_count+" locations available";
-}
-function drawMap(data,site){
- const bounds=data.site?.bounds;
- if(!bounds||!window.L)return;
- if(!map){map=L.map("map",{scrollWheelZoom:false});
-   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);}
- if(mapLayer)map.removeLayer(mapLayer);
- if(studyBox)map.removeLayer(studyBox);
- const path=site.path;
- mapLayer=L.imageOverlay(path+"after.png",bounds,{opacity:.95}).addTo(map);
- studyBox=L.rectangle(bounds,{color:"#3fceb1",weight:2,fill:false}).addTo(map);
- map.fitBounds(bounds,{padding:[20,20]});
- setTimeout(()=>map.invalidateSize(),150);
-}
-$("mapDetails").addEventListener("toggle",async()=>{
-  if(!$("mapDetails").open||!selected)return;
-  try{const r=await fetch(selected.path+"data.json",{cache:"no-store"});
-      const data=await r.json();drawMap(data,selected);}
-  catch(e){console.warn("Map imagery unavailable:",e);}
-});
-async function chooseSite(siteId){
- const site=manifest.sites.find(x=>x.id===siteId && x.status==="ready");
- if(!site)return;
- selected=site;cards();
- history.replaceState(null,"",location.pathname+"?site="+encodeURIComponent(siteId));
- $("sceneTitle").textContent=site.name;
- $("siteDescription").textContent=site.region+" · 2 km satellite research window";
- $("imageStatus").textContent="Loading real scenes…";
- $("trainLink").href="training.html?site="+encodeURIComponent(site.id);
- if(site.project_source){$("sourceLink").hidden=false;$("sourceLink").href=site.project_source}
- else $("sourceLink").hidden=true;
- try{
-  const response=await fetch(site.path+"data.json",{cache:"no-store"});
-  if(!response.ok)throw Error("Scene metadata unavailable");
-  const data=await response.json();
-  if(data.status!=="ready")throw Error("No verified satellite observation");
-  const dates=data.dates||[data.before,data.after];
-  const d0=dates[0]?.date||"Unknown";
-  const d1=dates[1]?.date||"Unknown";
-  $("imageStatus").textContent=d0+" → "+d1;
-  const content=$("imageContent");
-  content.replaceChildren();
-  const frames=document.createElement("div");frames.className="images";
-  for(const [filename,label,date] of [["before.png","BEFORE",d0],["after.png","AFTER",d1]]){
-    const box=document.createElement("div");box.className="image-box";
-    const img=document.createElement("img");img.src=site.path+filename;
-    img.alt="Real Sentinel-2 "+label.toLowerCase()+" observation "+date;
-    const tag=document.createElement("label");tag.textContent=label+" · "+date;
-    box.append(img,tag);frames.append(box);
-  }
-  content.append(frames);
-  const note=document.createElement("p");note.className="note";
-  note.textContent="These are true-color satellite observations from different dates. Changes in farming, seasons, clouds and construction can look similar. No land-cover class has been independently verified.";
-  content.append(note);
-  if($("mapDetails").open)drawMap(data,site);
- }catch(err){$("imageStatus").textContent="Unavailable";
-   $("imageContent").textContent="Satellite data could not be loaded: "+err.message}
-}
-async function start(){
- try{
-  const response=await fetch("projects.json",{cache:"no-store"});
-  if(!response.ok)throw Error("Study registry unavailable");
-  manifest=await response.json();
-  if(!Array.isArray(manifest.sites))throw Error("Invalid study registry");
-  const usable=manifest.sites.filter(x=>x.status==="ready"&&validId(x.id));
-  cards();
-  if(!usable.length){$("imageContent").textContent="No real observations available. Open Technical for diagnostics.";return}
-  const initial=usable.find(x=>x.id===requested)?.id||usable[0].id;
-  await chooseSite(initial);
- }catch(e){$("sites").textContent="Unable to load study list: "+e.message;
-  $("imageContent").textContent="Please open Technical for the previous observations."}
-}
-start();
-</script>
-</body>
-</html>
+<script src="monitor_app.js"></script>
+</body></html>
