@@ -194,13 +194,26 @@ async function renderSelected(area,items,options={}) {
  const selected=exactSelection(items);
  const rendered=[];
  const signal=options.signal;
+ const cache=options.cache instanceof Map?options.cache:null;
  for(const item of selected){
    if(signal?.aborted)throw Error("Cancelled");
    options.onProgress?.("Loading the exact Sentinel-2 observation from "+itemDate(item)+"…");
+   // Cache crops by area and exact scene ID, never by date alone.
+   const cacheKey=String(area.id||"unnamed")+":"+item.id;
+   if(cache?.has(cacheKey)){
+     rendered.push(cache.get(cacheKey));
+     continue;
+   }
    // Any individual scene failure is returned to the user, not replaced by
    // another scene with a different timestamp.
    try {
-     rendered.push(await previewOne(item,area,global.GeoTIFF,global.proj4,signal));
+     const result=await previewOne(item,area,global.GeoTIFF,global.proj4,signal);
+     if(signal?.aborted)throw Error("Cancelled");
+     rendered.push(result);
+     if(cache){
+       cache.set(cacheKey,result);
+       while(cache.size>8)cache.delete(cache.keys().next().value);
+     }
    } catch(err) {
      if(signal?.aborted)throw Error("Cancelled");
      throw Error("Cannot display the selected "+itemDate(item)+" scene: "+err.message);
