@@ -126,6 +126,28 @@ function parsePayload(text,areaId){
  }catch{}
  return null;
 }
+// Image crops are also cached as self-contained PNGs. Older or differently
+// constructed cached previews may have an image but no Uint8ClampedArray.
+// Convert supported byte views and, if necessary, decode the exact displayed
+// PNG instead of letting a valid visual pair crash the highlight control.
+async function alignedRGBA(scene,decodeImage){
+ const width=Number(scene?.width),height=Number(scene?.height);
+ if(!Number.isInteger(width)||!Number.isInteger(height)||
+    width<8||height<8||width>2048||height>2048)
+   throw Error("Satellite crop dimensions are unavailable");
+ const expected=width*height*4;
+ const data=scene?.rgba;
+ if(data&&typeof data.length==="number"&&data.length===expected&&
+    (ArrayBuffer.isView(data)||Array.isArray(data)))
+   return new Uint8ClampedArray(data);
+ if(typeof decodeImage!=="function"||typeof scene?.image!=="string"||
+    !scene.image.startsWith("data:image/png"))
+   throw Error("Original scene has no usable RGBA pixels or image backup");
+ const decoded=await decodeImage(scene.image,width,height);
+ if(!decoded||decoded.length!==expected||!ArrayBuffer.isView(decoded))
+   throw Error("Decoded preview did not match the study-area dimensions");
+ return new Uint8ClampedArray(decoded);
+}
 // RGB differences: an *untrained* visual signal, not calibrated change detection.
 // Cloud/season/atmosphere may produce false positives, especially without SCL.
 function rgbDifference(before,after,threshold=48){
@@ -153,7 +175,7 @@ function rgbDifference(before,after,threshold=48){
 }
 const api={KEY,isAllowed,bounds,validSaved,readSaved,sceneDate,sceneCloud,
   containsBbox,catalogScenes,ordered,dropInto,addByClick,removeFrom,
-  pairFrom,uniqueIds,sliderClip,cloudAlert,payload,parsePayload,rgbDifference};
+  pairFrom,uniqueIds,sliderClip,cloudAlert,payload,parsePayload,rgbDifference,alignedRGBA};
 if(typeof module==="object"&&module.exports)module.exports=api;
 root.InfraWorkspaceCore=api;
 })(typeof window!=="undefined"?window:globalThis);
