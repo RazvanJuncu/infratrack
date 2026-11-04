@@ -69,7 +69,7 @@
 <div class="panelhead"><h2>v0.5 · Validation Lab</h2><span class="pill">Verified evidence before model claims</span></div>
 <p class="meta">Select a real Sentinel pixel and inspect NDVI, BSI and NDBI across four observations. Add a documented label using independent dated evidence, not just the same satellite image being classified. An experimental Random Forest will be trained only after enough sourced labels exist across separate geographic sites.</p>
 <div class="controls">
-<label class="pill" style="cursor:pointer"><input id="inspectMode" type="checkbox" checked/> Click the comparison image or map to inspect pixels</label>
+<label class="pill" style="cursor:pointer"><input id="inspectMode" type="checkbox"/> Inspect pixel on image (disables comparison slider while enabled); map clicks always inspect</label>
 </div>
 <div class="annotation-layout">
   <div>
@@ -108,12 +108,23 @@
 <script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
 <script>
 let result, mode='rgb', position=50;
+let labPack=null, rawArrays=null, worldClasses=null, corridorMask=null, chosenSample=null, mapRef=null, markerRef=null;
 const el=id=>document.getElementById(id);
 function setPosition(x){position=Math.max(0,Math.min(100,x));el('post').style.clipPath='inset(0 0 0 '+position+'%)';el('cut').style.left=position+'%';el('handle').style.left=position+'%'}
 function layer(next){mode=next;el('post').src=next==='changes'?'candidates.png':next==='interpret'?'interpreted.png':next==='corridor'?'corridor_preview.png':next==='spectralBtn'?'spectral_preview.png':'after.png';for(const b of ['rgb','changes','interpret','corridor','spectralBtn'])el(b).classList.toggle('active',b===next)}
 el('rgb').onclick=()=>layer('rgb');el('changes').onclick=()=>layer('changes');el('interpret').onclick=()=>layer('interpret');el('corridor').onclick=()=>layer('corridor');el('spectralBtn').onclick=()=>layer('spectralBtn');
 let dragging=false;
-el('viewport').addEventListener('pointerdown',e=>{if(!result)return;dragging=true;el('viewport').setPointerCapture(e.pointerId);move(e)});
+el('viewport').addEventListener('pointerdown',e=>{
+ if(!result)return;
+ if(el('inspectMode').checked){
+   const rect=el('viewport').getBoundingClientRect();
+   const col=Math.floor((e.clientX-rect.left)/rect.width*(labPack?.width||200));
+   const row=Math.floor((e.clientY-rect.top)/rect.height*(labPack?.height||200));
+   selectPixel(row,col);
+   return;
+ }
+ dragging=true;el('viewport').setPointerCapture(e.pointerId);move(e)
+});
 el('viewport').addEventListener('pointermove',e=>{if(dragging)move(e)});
 el('viewport').addEventListener('pointerup',()=>dragging=false);
 el('viewport').addEventListener('pointercancel',()=>dragging=false);
@@ -148,6 +159,7 @@ el('hectares').textContent=result.candidate_hectares.toLocaleString('en-US')+' h
 el('roadchanges').textContent=result.corridor?.status==='mapped_osm'?result.corridor.candidate_hectares+' ha':'Unavailable';
 el('corridorarea').textContent=result.corridor?.status==='mapped_osm'?result.corridor.study_hectares+' ha':'Unavailable';
 renderTimeline(result.temporal||[]);
+await initValidation(result);
 await renderMap(result);
 el('coverage').textContent=result.clear_overlap_percent+'%';
 el('resolution').textContent=result.pixel_size_m+' m';
@@ -164,6 +176,16 @@ async function renderMap(data){
  if(typeof L==='undefined'){el('mapStatus').textContent='Map library unavailable';return}
  const bounds=data.site.bounds;
  const map=L.map('map',{scrollWheelZoom:false,preferCanvas:true,zoomControl:true});
+ mapRef=map;
+ map.on('click',event=>{
+   if(!labPack || typeof proj4==='undefined')return;
+   const info=labPack.grid;
+   const utm='+proj=utm +zone=35 +datum=WGS84 +units=m +no_defs +type=crs';
+   const xy=proj4('EPSG:4326',utm,[event.latlng.lng,event.latlng.lat]);
+   const col=Math.floor((xy[0]-info.origin_easting)/info.pixel_size_m);
+   const row=Math.floor((info.origin_northing-xy[1])/info.pixel_size_m);
+   selectPixel(row,col,event.latlng);
+ });
  const streets=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
    maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
  }).addTo(map);
@@ -235,6 +257,122 @@ function renderTimeline(series){
  }}svg+='</svg>';
  el('timeline').innerHTML=svg;
 }
+
+async function initValidation(data){
+ const status=el('modelStatus');
+ if(data.v05?.status!=='ready'){
+   status.textContent='VALIDATION DATA UNAVAILABLE — '+(data.v05?.message||'Four source observations not loaded');
+   el('sampleInfo').textContent='Real Sentinel-2 pixel measurements could not be loaded.';
+   return;
+ }
+ try{
+   const response=await fetch('inspection_v05.json',{cache:'no-store'});
+   if(!response.ok)throw Error('Pixel measurements unavailable');
+   labPack=await response.json();
+   if(labPack.signature!==data.v05.signature || labPack.width!==200 || labPack.height!==200){
+     throw Error('Pixel data provenance does not match this satellite run');
+   }
+   rawArrays={};
+   for(const [name,base64] of Object.entries(labPack.arrays)){
+     const bytes=atob(base64);
+     const buffer=new Uint8Array(bytes.length);
+     for(let i=0;i<bytes.length;i++)buffer[i]=bytes.charCodeAt(i);
+     rawArrays[name]=buffer;
+   }
+   const w=atob(labPack.worldcover), c=atob(labPack.corridor);
+   worldClasses=Uint8Array.from(w,ch=>ch.charCodeAt(0));
+   corridorMask=Uint8Array.from(c,ch=>ch.charCodeAt(0));
+   el('sampleInfo').textContent='Ready. Click a pixel on the map, or enable image inspection above. Historical values come from the four real Sentinel-2 scenes.';
+ }catch(e){
+   labPack=null;
+   status.textContent='PIXEL INSPECTOR UNAVAILABLE — '+e.message;
+   return;
+ }
+ try{
+   const response=await fetch('validation_v05.json',{cache:'no-store'});
+   if(!response.ok)throw Error('No training evaluation artifact');
+   const validation=await response.json();
+   if(validation.status==='needs_labels'){
+     const counts=validation.counts_by_class||{};
+     const groups=validation.independent_groups_by_class||{};
+     status.textContent='NO MODEL FITTED · '+(validation.ground_truth_label_count||0)+' owner-reviewed labels accepted for this imagery. Need ≥'+validation.minimum_samples_per_class+' labels and ≥'+validation.minimum_geographic_groups_per_class+' separate sites PER class.';
+     el('modelMetrics').textContent=['construction','agriculture','unchanged']
+       .map(k=>k+': '+(counts[k]||0)+' labels / '+(groups[k]||0)+' sites').join('   |   ');
+   }else if(validation.status==='experimental_model'){
+     status.textContent='EXPERIMENTAL MODEL · Small independently held-out geographic-site test only. Generalization NOT demonstrated.';
+     const classes=validation.class_names||[];
+     let html='<p>Train: '+validation.n_train+' labels · Holdout: '+validation.n_test+' labels · Balanced accuracy on these sites: '+validation.balanced_accuracy+'</p>';
+     html+='<table class="validation-matrix"><caption>Confusion matrix: rows true class, columns predicted</caption><tr><th>True \\ predicted</th>'+classes.map(c=>'<th>'+escapeHtml(c)+'</th>').join('')+'</tr>';
+     for(let i=0;i<classes.length;i++)html+='<tr><th>'+escapeHtml(classes[i])+'</th>'+validation.confusion_matrix[i].map(x=>'<td>'+x+'</td>').join('')+'</tr>';
+     html+='</table>';
+     html+='<p>'+classes.map(c=>escapeHtml(c)+' precision '+validation.precision[c]+' / recall '+validation.recall[c]).join(' · ')+'</p>';
+     el('modelMetrics').innerHTML=html;
+   }else{
+     status.textContent='NO VERIFIED MODEL · '+(validation.message||validation.status||'Validation not ready');
+   }
+ }catch(e){status.textContent='No validation evaluation available: '+e.message}
+}
+
+function signalAt(name,i,pixel){
+ const x=rawArrays?.[name+'_'+i]?.[pixel];
+ return x===undefined||x===255?null:+(x/127-1).toFixed(3);
+}
+function selectPixel(row,col,location){
+ if(!labPack || !rawArrays){
+   el('labelMessage').textContent='Pixel data have not loaded; no annotation can be submitted.';
+   return;
+ }
+ if(!Number.isInteger(row)||!Number.isInteger(col)||row<0||col<0||row>=labPack.height||col>=labPack.width){
+   el('labelMessage').textContent='Select a point inside the 2 km satellite study rectangle.';
+   return;
+ }
+ chosenSample={row,col};
+ const pixel=row*labPack.width+col;
+ const landNames={10:'Tree cover',20:'Shrubland',30:'Grassland',40:'Cropland',50:'Built-up',
+                   60:'Bare/sparse',70:'Snow/ice',80:'Water',90:'Wetland',95:'Mangroves',100:'Moss/lichen'};
+ const classCode=worldClasses[pixel]||0;
+ el('sampleInfo').innerHTML='<b>Selected 10 m study pixel: row '+row+', column '+col+'</b><div class="labhint">WorldCover 2021: '+escapeHtml(landNames[classCode]||'Unknown')+' (code '+classCode+') · In mapped A0 ±130 m buffer: '+(corridorMask[pixel]?'Yes':'No')+' · Original source data, not manual ground truth</div>';
+ el('sampleMetrics').innerHTML=labPack.dates.map((item,i)=>{
+   const formatted=['ndvi','bsi','ndbi'].map(name=>{
+     const v=signalAt(name,i,pixel);
+     return name.toUpperCase()+': '+(v===null?'no data':v.toFixed(2));
+   }).join('<br>');
+   return '<div class="sample-cell">'+escapeHtml(item.date)+'<b>'+formatted+'</b></div>';
+ }).join('');
+ el('submitLabel').disabled=false;
+ el('labelMessage').textContent='Selected: ('+row+', '+col+'). Add independent dated evidence and open a GitHub issue when ready.';
+ if(location&&mapRef&&typeof L!=='undefined'){
+   if(markerRef)mapRef.removeLayer(markerRef);
+   markerRef=L.circleMarker(location,{radius:6,weight:2,color:'#fff',fillColor:'#edb755',fillOpacity:1}).addTo(mapRef);
+ }
+}
+el('submitLabel').addEventListener('click',()=>{
+ if(!labPack || !chosenSample){el('labelMessage').textContent='Select a pixel first.';return}
+ const cls=el('labelClass').value,site=el('labelSite').value.trim();
+ const url=el('labelUrl').value.trim(),date=el('labelDate').value;
+ const note=el('labelNote').value.trim(),attest=el('labelAttestation').checked;
+ if(!/^[A-Za-z0-9_-]{4,64}$/.test(site)){
+   el('labelMessage').textContent='Site group must be 4-64 letters, numbers, - or _. Use the SAME group for pixels from the same location.';return
+ }
+ let parsed;
+ try{parsed=new URL(url)}catch{el('labelMessage').textContent='Enter the full URL of independent dated evidence.';return}
+ if(!['https:','http:'].includes(parsed.protocol)||!date||date>new Date().toISOString().slice(0,10)||note.length<12||!attest){
+   el('labelMessage').textContent='Evidence must have an HTTP(S) link, date not in the future, a description (12+ characters), and your explicit confirmation.';return
+ }
+ const annotation={
+   study_id:labPack.study_id,signature:labPack.signature,
+   row:chosenSample.row,col:chosenSample.col,
+   label:cls,site_group:site,evidence_url:url,evidence_date:date,
+   note:note,attestation:true
+ };
+ const ticks=String.fromCharCode(96).repeat(3);
+ const body='Source-backed research annotation, owner attested; not independently audited.\\n\\n'+ticks+'infratrack-label\\n'+JSON.stringify(annotation,null,2)+'\\n'+ticks+'\\n\\nPlease verify date and independent evidence.';
+ const title='[InfraTrack label] '+cls+' '+site+' pixel '+chosenSample.row+','+chosenSample.col;
+ const issueUrl=new URL('https://github.com/RazvanJuncu/infratrack/issues/new');
+ issueUrl.searchParams.set('title',title);issueUrl.searchParams.set('body',body);
+ window.open(issueUrl.toString(),'_blank','noopener');
+ el('labelMessage').textContent='GitHub issue composer opened. Submit it there to record this annotation. This page cannot submit on your behalf.';
+});
 function escapeHtml(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
 start();
 </script>
