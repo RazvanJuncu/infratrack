@@ -40,6 +40,7 @@ class ValidationLabTests(unittest.TestCase):
     def test_evidence_is_mandatory(self):
         data=dict(study_id="a0-nord3-2km-v05",signature="0"*16,row=4,col=3,
                   label="construction",site_group="road_site_01",
+                  question_version="change-types-v2",
                   evidence_url="https://example.com/dates",evidence_date="2025-01-01",
                   note="Construction independently verified from dated aerial photos.",
                   attestation=True)
