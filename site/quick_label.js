@@ -94,8 +94,12 @@
     let index = candidates.length ? Math.max(0,nextUnreviewed(candidates,drafts,-1)) : -1;
     let feedback = "";
     const images = [new Image(),new Image()];
-    images[0].src = "before.png";
-    images[1].src = "after.png";
+    const prefix = config.assetPrefix || "";
+    if (!/^(?:projects\/[a-z0-9-]+\/)?$/.test(prefix)) {
+      throw new Error("Invalid local satellite asset folder");
+    }
+    images[0].src = prefix+"before.png";
+    images[1].src = prefix+"after.png";
     images.forEach(img => {
       img.onload = () => renderPreview();
       img.onerror = () => { get("quickImageWarning").textContent =
