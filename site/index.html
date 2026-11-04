@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>InfraTrack — Satellite change intelligence</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 :root{color-scheme:dark;--bg:#070d13;--panel:#121d27;--border:#263a48;--muted:#99b0c0;--green:#47dfba}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 90% 60% at 85% 0%,#112a32 0%,transparent 55%),var(--bg);color:#edf8fd;font:15px/1.5 system-ui,Segoe UI,Inter,sans-serif}header{height:73px;border-bottom:1px solid #293844;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,70px)}.brand{font-size:22px;letter-spacing:-1px;font-weight:850}.brand b{color:var(--green)}.tag{font-size:11px;letter-spacing:1.6px;color:var(--green);font-weight:750;border:1px solid #235c53;border-radius:99px;padding:6px 11px}.wrap{max-width:1250px;margin:0 auto;padding:42px 24px 70px}.eyebrow{color:var(--green);font-size:12px;font-weight:750;letter-spacing:2px}h1{font-size:clamp(30px,5vw,53px);letter-spacing:-2px;line-height:1.08;margin:12px 0}.sub{color:var(--muted);max-width:770px;margin:12px 0 26px}a{color:#78eacb}.status{border:1px solid var(--border);background:#10212c;padding:12px 16px;border-radius:12px;color:#b9d5e1;margin:16px 0 22px}.status.warn{background:#261f17;border-color:#745434;color:#f4c88a}.grid{display:grid;grid-template-columns:1.5fr .7fr;gap:17px}.panel{border:1px solid var(--border);border-radius:16px;background:#101a24;padding:19px;min-width:0}.panelhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.panel h2{font-size:17px;margin:0}.pill{font-size:12px;color:#b8d0d8;background:#1c2b36;padding:6px 10px;border:1px solid #304553;border-radius:8px}.viewport{background:linear-gradient(135deg,#0a1922,#203440);border-radius:12px;overflow:hidden;position:relative;aspect-ratio:1.2;max-height:620px;touch-action:none;user-select:none}.viewport img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill;pointer-events:none}.viewport .right{clip-path:inset(0 0 0 50%)}.line{position:absolute;left:50%;height:100%;width:2px;background:white;box-shadow:0 0 15px #fff8;pointer-events:none}.handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:white;color:#18212a;font-weight:800;box-shadow:0 0 0 5px #fff3;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:#b6cbd8;font-weight:650}.dates{display:flex;justify-content:space-between;color:#b2c8d4;font-size:12px;padding:8px 0}.controls{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}button{background:#1a2b37;border:1px solid #354957;color:#cde1eb;padding:10px 15px;border-radius:9px;cursor:pointer;font-weight:650}button.active{background:#134b45;border-color:#32b79b;color:white}button:disabled{opacity:.4;cursor:not-allowed}.metric{padding:17px 0;border-bottom:1px solid #2b3c49}.metric small{font-size:12px;color:var(--muted);display:block}.metric strong{display:block;font-size:28px;line-height:1.25;letter-spacing:-1px}.meta{font-size:12px;overflow-wrap:anywhere;color:#a4bdcd}.meta b{color:#f1fbff}ul{padding-left:19px;color:#a8bfcd}li{margin:8px 0}footer{color:#718e9e;font-size:12px;margin-top:30px}@media(max-width:800px){.grid{grid-template-columns:1fr}.wrap{padding-top:26px}header{padding:0 19px}.tag{font-size:9px}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 90% 60% at 85% 0%,#112a32 0%,transparent 55%),var(--bg);color:#edf8fd;font:15px/1.5 system-ui,Segoe UI,Inter,sans-serif}header{height:73px;border-bottom:1px solid #293844;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,70px)}.brand{font-size:22px;letter-spacing:-1px;font-weight:850}.brand b{color:var(--green)}.tag{font-size:11px;letter-spacing:1.6px;color:var(--green);font-weight:750;border:1px solid #235c53;border-radius:99px;padding:6px 11px}.wrap{max-width:1250px;margin:0 auto;padding:42px 24px 70px}.eyebrow{color:var(--green);font-size:12px;font-weight:750;letter-spacing:2px}h1{font-size:clamp(30px,5vw,53px);letter-spacing:-2px;line-height:1.08;margin:12px 0}.sub{color:var(--muted);max-width:770px;margin:12px 0 26px}a{color:#78eacb}.status{border:1px solid var(--border);background:#10212c;padding:12px 16px;border-radius:12px;color:#b9d5e1;margin:16px 0 22px}.status.warn{background:#261f17;border-color:#745434;color:#f4c88a}.grid{display:grid;grid-template-columns:1.5fr .7fr;gap:17px}.panel{border:1px solid var(--border);border-radius:16px;background:#101a24;padding:19px;min-width:0}.panelhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.panel h2{font-size:17px;margin:0}.pill{font-size:12px;color:#b8d0d8;background:#1c2b36;padding:6px 10px;border:1px solid #304553;border-radius:8px}.viewport{background:linear-gradient(135deg,#0a1922,#203440);border-radius:12px;overflow:hidden;position:relative;aspect-ratio:1.2;max-height:620px;touch-action:none;user-select:none}.viewport img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill;pointer-events:none}.viewport .right{clip-path:inset(0 0 0 50%)}.line{position:absolute;left:50%;height:100%;width:2px;background:white;box-shadow:0 0 15px #fff8;pointer-events:none}.handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:white;color:#18212a;font-weight:800;box-shadow:0 0 0 5px #fff3;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:#b6cbd8;font-weight:650}.dates{display:flex;justify-content:space-between;color:#b2c8d4;font-size:12px;padding:8px 0}.controls{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}button{background:#1a2b37;border:1px solid #354957;color:#cde1eb;padding:10px 15px;border-radius:9px;cursor:pointer;font-weight:650}button.active{background:#134b45;border-color:#32b79b;color:white}button:disabled{opacity:.4;cursor:not-allowed}.metric{padding:17px 0;border-bottom:1px solid #2b3c49}.metric small{font-size:12px;color:var(--muted);display:block}.metric strong{display:block;font-size:28px;line-height:1.25;letter-spacing:-1px}.meta{font-size:12px;overflow-wrap:anywhere;color:#a4bdcd}.meta b{color:#f1fbff}ul{padding-left:19px;color:#a8bfcd}li{margin:8px 0}footer{color:#718e9e;font-size:12px;margin-top:30px}#map{height:410px;border-radius:12px;background:#172734;z-index:0} .widepanel{margin-bottom:17px} #timeline svg{width:100%;max-height:260px} .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#a3bcc8} .legend strong{font-size:14px;color:#38dbc0} .maphint{color:#a6bdcb;font-size:12px;margin-top:10px} .micro{font-size:12px;color:#b9d0df} @media(max-width:800px){#map{height:340px}.grid{grid-template-columns:1fr}.wrap{padding-top:26px}header{padding:0 19px}.tag{font-size:9px}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s}}
 </style>
 </head>
 <body>
@@ -15,6 +16,17 @@
 <h1>A0 Nord — Change explorer</h1>
 <p class="sub">A first experiment in observing infrastructure from orbit. Two actual Copernicus Sentinel-2 scenes, pixel-level cloud masking and flagged spectral changes — with every limitation visible.</p>
 <div class="status" id="status">Connecting to observation results…</div>
+<section class="panel widepanel">
+<div class="panelhead"><h2>Live geographic context · A0 Nord Lot 3</h2><span class="pill" id="mapStatus">Loading OSM road alignment…</span></div>
+<div id="map" role="application" aria-label="Map with A0 motorway alignment and 2 km satellite study area"></div>
+<div class="maphint">Research geometry: © OpenStreetMap contributors (ODbL). The turquoise lines are mapped A0 roadways, not a cadastral project boundary. The study rectangle covers only a 2 km section.</div>
+</section>
+<section class="panel widepanel">
+<div class="panelhead"><h2>Multiyear surface vegetation signal</h2><span class="pill">NDVI · not completion percentage</span></div>
+<div id="timeline" class="micro">Awaiting real satellite observations…</div>
+<div class="legend"><span><strong>━</strong> Mapped corridor (±130 m)</span><span><span style="color:#e2a45a;font-weight:800">━</span> Adjacent land (control)</span></div>
+<p class="meta">Observations may fall on different dates and show seasonal farming. NDVI is not construction progress, and an A0 segment mapped in OSM is not an official as-built survey.</p>
+</section>
 <div class="grid">
 <section class="panel">
 <div class="panelhead"><h2>Before / after satellite comparison</h2><span class="pill" id="source">Sentinel-2 L2A</span></div>
@@ -25,13 +37,15 @@
   <div class="line" id="cut" hidden></div><div class="handle" id="handle" hidden>↔</div>
 </div>
 <div class="dates"><span id="date0">Before: —</span><span id="date1">After: —</span></div>
-<div class="controls"><button id="rgb" class="active" disabled>True color</button><button id="changes" disabled>Raw vegetation changes</button><button id="interpret" disabled>Land-cover interpretation</button></div>
+<div class="controls"><button id="rgb" class="active" disabled>True color</button><button id="changes" disabled>All vegetation changes</button><button id="interpret" disabled>Land-cover interpretation</button><button id="corridor" disabled>Along A0 corridor</button></div>
 <div class="meta" style="margin:12px 0"><span style="color:#40dac0;font-weight:700">■</span> Persistent change outside 2021 cropland &nbsp; <span style="color:#efa943;font-weight:700">■</span> Historical cropland context &nbsp; <span style="color:#e0586c;font-weight:700">■</span> Unresolved</div>
 <p class="meta" style="margin-top:15px">Drag the separator to compare. Highlighted regions represent <b>spectral change candidates</b>, not confirmed construction.</p>
 </section>
 <aside class="panel">
 <h2>Observation summary</h2>
 <div class="metric"><small>Candidate surface changes</small><strong id="hectares">—</strong><small>Hectares · requires ground verification</small></div>
+<div class="metric"><small>Changes inside mapped A0 corridor (±130 m)</small><strong id="roadchanges">—</strong><small>Not verified construction · 2 km study area only</small></div>
+<div class="metric"><small>Mapped corridor study coverage</small><strong id="corridorarea">—</strong></div>
 <div class="metric"><small>2021 cropland context</small><strong id="agri">—</strong><small>Not proof of farming today; may include new infrastructure</small></div>
 <div class="metric"><small>Persistent non-cropland changes</small><strong id="persistent">—</strong><small>Requires visual verification; NOT confirmed roadworks</small></div>
 <div class="metric"><small>Other candidates for manual review</small><strong id="review">—</strong></div>
@@ -40,18 +54,19 @@
 <h2 style="margin-top:22px">Evidence</h2><div class="meta" id="evidence">No verified scene IDs yet.</div>
 <h2 style="margin-top:22px">What this does NOT tell us</h2>
 <ul><li>That detected changes are definitely roadworks.</li><li>The percentage of construction completed.</li><li>Anything about small road markings or internal structures.</li><li>Full coverage of the 8.6 km A0 lot.</li></ul>
-<p class="meta">The initial 2 km study area is approximate and not yet matched to a verified motorway alignment. Crop harvesting and seasonal vegetation can cause false detections.</p>
+<p class="meta">The analysis window is now centered on an OSM-mapped A0 Lot 3 segment. This is a map-derived corridor, not an authoritative engineering alignment. Crop harvesting and seasonal vegetation can still cause false detections. The road buffer is 130 m, not the legal construction footprint.</p>
 <p class="meta">Sources: <a href="https://earth-search.aws.element84.com/v1" target="_blank" rel="noopener">Element 84 Earth Search</a> · Copernicus Sentinel-2; <a href="https://esa-worldcover.org/en/data-access" target="_blank" rel="noopener">ESA WorldCover 2021</a> (CC BY 4.0). Land-cover labels were generated by an existing ML product; the triage rules are deterministic, NOT a locally running neural network.</p>
 </aside>
 </div>
 <footer>InfraTrack Research Alpha · No fabricated images · No AI-generated detections · Experimental use only</footer>
 </main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 let result, mode='rgb', position=50;
 const el=id=>document.getElementById(id);
 function setPosition(x){position=Math.max(0,Math.min(100,x));el('post').style.clipPath='inset(0 0 0 '+position+'%)';el('cut').style.left=position+'%';el('handle').style.left=position+'%'}
-function layer(next){mode=next;el('post').src=next==='changes'?'candidates.png':next==='interpret'?'interpreted.png':'after.png';for(const b of ['rgb','changes','interpret'])el(b).classList.toggle('active',b===next)}
-el('rgb').onclick=()=>layer('rgb');el('changes').onclick=()=>layer('changes');el('interpret').onclick=()=>layer('interpret');
+function layer(next){mode=next;el('post').src=next==='changes'?'candidates.png':next==='interpret'?'interpreted.png':next==='corridor'?'corridor_preview.png':'after.png';for(const b of ['rgb','changes','interpret','corridor'])el(b).classList.toggle('active',b===next)}
+el('rgb').onclick=()=>layer('rgb');el('changes').onclick=()=>layer('changes');el('interpret').onclick=()=>layer('interpret');el('corridor').onclick=()=>layer('corridor');
 let dragging=false;
 el('viewport').addEventListener('pointerdown',e=>{if(!result)return;dragging=true;el('viewport').setPointerCapture(e.pointerId);move(e)});
 el('viewport').addEventListener('pointermove',e=>{if(dragging)move(e)});
@@ -70,9 +85,13 @@ el('status').textContent='REAL SENTINEL-2 · '+result.before.date+' → '+result
 el('empty').hidden=true;
 for(const id of ['pre','post','cut','handle'])el(id).hidden=false;
 el('pre').src='before.png';el('post').src='after.png';setPosition(50);
-el('rgb').disabled=false;el('changes').disabled=false;el('interpret').disabled=!result.interpretation;
+el('rgb').disabled=false;el('changes').disabled=false;el('interpret').disabled=!result.interpretation;el('corridor').disabled=result.corridor?.status!=='mapped_osm';
 el('date0').textContent='◂ '+result.before.date;el('date1').textContent=result.after.date+' ▸';
 el('hectares').textContent=result.candidate_hectares.toLocaleString('en-US')+' ha';
+el('roadchanges').textContent=result.corridor?.status==='mapped_osm'?result.corridor.candidate_hectares+' ha':'Unavailable';
+el('corridorarea').textContent=result.corridor?.status==='mapped_osm'?result.corridor.study_hectares+' ha':'Unavailable';
+renderTimeline(result.temporal||[]);
+await renderMap(result);
 el('coverage').textContent=result.clear_overlap_percent+'%';
 el('resolution').textContent=result.pixel_size_m+' m';
 if(result.interpretation){
@@ -83,6 +102,63 @@ if(result.interpretation){
 
 el('evidence').innerHTML='<b>Before scene:</b> '+escapeHtml(result.before.id)+'<br><b>After scene:</b> '+escapeHtml(result.after.id)+'<br><b>Follow-up scene:</b> '+escapeHtml(result.interpretation?.followup?.id||'not available')+'<br><b>Land-cover baseline:</b> '+escapeHtml(result.interpretation?.worldcover_tile||'not available')+'<br><b>Processing:</b> real satellite imagery';
 }catch(err){el('status').classList.add('warn');el('status').textContent='NO VERIFIED OBSERVATION — '+err.message;result=null}}
+
+async function renderMap(data){
+ if(typeof L==='undefined'){el('mapStatus').textContent='Map library unavailable';return}
+ const map=L.map('map',{scrollWheelZoom:false,preferCanvas:true}).setView([data.site.lat,data.site.lon],13);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+ const bounds=data.site.bounds;
+ const study=L.rectangle(bounds,{weight:2,color:'#f0b45b',fill:false,dashArray:'7 5'}).addTo(map);
+ study.bindPopup('Research AOI 2 × 2 km · NOT entire Lot 3');
+ let overlay=L.imageOverlay('corridor_changes.png',bounds,{opacity:.85,interactive:false});
+ let routeLoaded=false;
+ try{
+    const response=await fetch('corridor.geojson',{cache:'no-store'});
+    if(!response.ok)throw Error('OSM geometry unavailable');
+    const geo=await response.json();
+    if(geo.features?.length){
+      const route=L.geoJSON(geo,{style:{color:'#46e4c3',weight:5,opacity:.95},
+        onEachFeature:(feature,layer)=>layer.bindPopup('Mapped A0 Lot 3 · OSM way '+feature.properties?.osm_way_id+' · NOT an official survey')}).addTo(map);
+      const rb=route.getBounds();
+      if(rb.isValid())map.fitBounds(rb.pad(.12),{maxZoom:14});
+      routeLoaded=true;
+    }else map.fitBounds(study.getBounds());
+ }catch(err){map.fitBounds(study.getBounds());console.warn(err)}
+ el('mapStatus').textContent=routeLoaded?'Mapped A0 road geometry · research only':'No verified mapped road geometry';
+ const toggle=L.control({position:'topright'});
+ toggle.onAdd=function(){
+   const div=L.DomUtil.create('div','leaflet-bar');
+   div.style='background:#11242d;color:#ddf5ff;padding:7px 10px;border-radius:7px;box-shadow:0 1px 12px #0006;font:12px system-ui';
+   div.innerHTML='<label><input type="checkbox" id="mapChanges" '+(routeLoaded?'':'disabled')+'> Candidate changes</label>';
+   L.DomEvent.disableClickPropagation(div);
+   div.querySelector('input').addEventListener('change',event=>{
+     if(event.target.checked)overlay.addTo(map);
+     else if(map.hasLayer(overlay))map.removeLayer(overlay);
+   });
+   return div;
+ };
+ toggle.addTo(map);
+ setTimeout(()=>map.invalidateSize(),200);
+}
+function renderTimeline(series){
+ const rows=series.filter(x=>Number.isFinite(x.corridor_ndvi));
+ if(!rows.length){el('timeline').textContent='No usable NDVI profile: road corridor not mapped or no cloud-free scenes.';return}
+ const W=760,H=250,L=50,R=18,T=18,B=52;
+ const xs=year=>L+(year-2022)/4*(W-L-R);
+ const ys=v=>T+(.9-v)/1.1*(H-T-B);
+ const line=(field,color)=>series.filter(s=>s[field]!==null&&s[field]!==undefined).map(s=>[xs(s.year),ys(s[field]),s]).map((p,i)=>i?'L'+p[0]+','+p[1]:'M'+p[0]+','+p[1]).join(' ');
+ let svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Five-year median NDVI on A0 mapped corridor and nearby control land">';
+ for(const v of [-.2,0,.2,.4,.6,.8]){const y=ys(v);svg+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#344754" stroke-width="1"/><text x="7" y="'+(y+4)+'" font-size="12" fill="#9db8c5">'+v.toFixed(1)+'</text>'}
+ for(let y=2022;y<=2026;y++){svg+='<text x="'+xs(y)+'" y="'+(H-24)+'" fill="#a7c0ce" font-size="13" text-anchor="middle">'+y+'</text>'}
+ svg+='<path d="'+line('control_ndvi')+'" fill="none" stroke="#e2a45a" stroke-width="3"/>';
+ svg+='<path d="'+line('corridor_ndvi')+'" fill="none" stroke="#39d8ba" stroke-width="3"/>';
+ for(const item of series){for(const [key,color] of [['corridor_ndvi','#39d8ba'],['control_ndvi','#e2a45a']]){
+   if(item[key]===null||item[key]===undefined)continue;
+   svg+='<circle cx="'+xs(item.year)+'" cy="'+ys(item[key])+'" r="5" fill="'+color+'"><title>'+item.year+': '+item[key]+' NDVI ('+escapeHtml(item.date||'unknown date')+')</title></circle>'
+ }}svg+='</svg>';
+ el('timeline').innerHTML=svg;
+}
 function escapeHtml(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
 start();
 </script>
