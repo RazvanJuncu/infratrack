@@ -1,0 +1,17 @@
+name: Find OSM local motorway ways
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/discover_bbox.py
+      - .github/workflows/discover-bbox.yml
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - run: python scripts/discover_bbox.py
