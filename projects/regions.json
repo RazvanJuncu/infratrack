@@ -1,0 +1,86 @@
+{
+  "sites": [
+    {
+      "id": "a0-nord-lot3",
+      "name": "A0 Nord · Lot 3 (DN2)",
+      "region": "Bucharest / Ilfov",
+      "ref": "A0",
+      "lat": 44.5065,
+      "lon": 26.2328,
+      "size_km": 2,
+      "use_anchor": true,
+      "osm_way_ids": [
+        1517261128,
+        1517261130,
+        697840869
+      ],
+      "project_source": "https://www.130kmh.ro/autostrazi/a0/"
+    },
+    {
+      "id": "a0-sud-bragadiru",
+      "name": "A0 Sud · Bragadiru (DN6)",
+      "region": "Bucharest / Ilfov",
+      "ref": "A0",
+      "lat": 44.356154,
+      "lon": 25.968331,
+      "size_km": 2,
+      "osm_way_ids": [
+        1227579803,
+        1376174720,
+        1227579804,
+        1376174721,
+        259696637
+      ],
+      "project_source": "https://www.openstreetmap.org/way/1227579803"
+    },
+    {
+      "id": "a7-ramnicu-sud",
+      "name": "A7 · Râmnicu Sărat South",
+      "region": "Buzău County",
+      "ref": "A7",
+      "lat": 45.369283,
+      "lon": 27.093946,
+      "size_km": 2,
+      "osm_way_ids": [
+        1335112262,
+        1335112263,
+        1030819383,
+        1030819384,
+        1030819385
+      ],
+      "project_source": "https://www.130kmh.ro/autostrazi/a7/"
+    },
+    {
+      "id": "a7-ramnicu-nord",
+      "name": "A7 · Râmnicu Sărat North",
+      "region": "Buzău County",
+      "ref": "A7",
+      "lat": 45.410125,
+      "lon": 27.099514,
+      "size_km": 2,
+      "osm_way_ids": [
+        1032496402,
+        1032496399,
+        1032496401,
+        1032496400
+      ],
+      "project_source": "https://www.130kmh.ro/autostrazi/a7/"
+    },
+    {
+      "id": "a1-tigveni",
+      "name": "A1 · Tigveni / Curtea de Argeș",
+      "region": "Argeș County",
+      "ref": "A1",
+      "lat": 45.145587,
+      "lon": 24.611892,
+      "size_km": 2,
+      "osm_way_ids": [
+        287141520,
+        287141519,
+        845196149,
+        845196148
+      ],
+      "project_source": "https://agerpres.ro/economic/2026/09/17/pistol-lucrarile-de-drum-pe-cei-9-86-km-ai-sectiunii-tigveni-curtea-de-arges-sunt-finalizate-teste-d--1594457"
+    }
+  ]
+}
