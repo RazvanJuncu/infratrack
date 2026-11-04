@@ -33,6 +33,14 @@ jobs:
             echo "::warning::Satellite imagery was not available; publishing explicit no-data state"
             python scripts/failure_page.py
           fi
+      - name: Generate geographically distributed, unverified review targets
+        shell: bash
+        run: |
+          if [ -f site/features_v05.npz ]; then
+            python scripts/build_review_queue.py --per-class 8
+          else
+            echo '{"status":"unavailable","message":"Real source imagery missing; no candidate points generated","items":[]}' > site/review_queue_v06.json
+          fi
       - name: Evaluate owner-sourced labels with site-held-out testing
         shell: bash
         run: |
