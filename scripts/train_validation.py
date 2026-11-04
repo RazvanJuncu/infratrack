@@ -39,6 +39,48 @@ def samples_from_npz(npz, rows):
         return np.empty((0,17)),np.array([]),[]
     return np.array(x,dtype=np.float32),np.array(y),accepted
 
+
+def deduplicate_annotations(rows):
+    """Remove duplicate points and entirely exclude conflicting human labels."""
+    buckets=defaultdict(list)
+    for r in rows:
+        buckets[(int(r["row"]),int(r["col"]))].append(r)
+    unique=[]
+    conflicts=[]
+    for pixel,records in buckets.items():
+        if len(set(r["label"] for r in records))>1:
+            conflicts.append(pixel)
+            continue
+        unique.append(records[0])
+    return unique,conflicts
+
+def spatial_site_groups(rows,block_pixels=25):
+    """Merge rows connected by 250m grid block OR owner-declared physical site.
+
+    Prevents easily inflated test accuracy by assigning adjacent pixels
+    different user-chosen site names. The geographic blocks remain SMALL:
+    this is a local research holdout, not regional generalisation testing.
+    """
+    parent=list(range(len(rows)))
+    def find(x):
+        while parent[x]!=x:
+            parent[x]=parent[parent[x]]
+            x=parent[x]
+        return x
+    def union(a,b):
+        x,y=find(a),find(b)
+        if x!=y:parent[y]=x
+    by_block={}
+    by_site={}
+    for i,r in enumerate(rows):
+        key=(int(r["row"])//block_pixels,int(r["col"])//block_pixels)
+        site=str(r["site_group"])
+        if key in by_block: union(i,by_block[key])
+        else:by_block[key]=i
+        if site in by_site:union(i,by_site[site])
+        else:by_site[site]=i
+    return [f"combined_spatial_group_{find(i)}" for i in range(len(rows))]
+
 def site_group_split(y,group_names):
     """Require each class to occur in multiple distinct train/test sites."""
     from sklearn.model_selection import GroupShuffleSplit
@@ -73,10 +115,12 @@ def produce(features,labels,out,overlay):
                         rows.append(r)
                 except (ValueError,TypeError) as e:
                     print(f"Invalid labeled line {ln}: {e}")
+        rows,conflict_pixels=deduplicate_annotations(rows)
         x,y,accepted=samples_from_npz(pack,rows)
+        geographic_groups=spatial_site_groups(accepted)
         sites=defaultdict(set)
-        for r in accepted:
-            sites[r["label"]].add(r["site_group"])
+        for r,g in zip(accepted,geographic_groups):
+            sites[r["label"]].add(g)
         counts=dict(Counter(y))
         groups={c:len(sites[c]) for c in CLASSES}
         base={"study_id":study_id,"signature":signature,
@@ -85,7 +129,9 @@ def produce(features,labels,out,overlay):
               "independent_groups_by_class":groups,
               "minimum_samples_per_class":MIN_PER_CLASS,
               "minimum_geographic_groups_per_class":MIN_GROUPS_PER_CLASS,
-              "validation_type":"geographic_site_group_holdout",
+              "validation_type":"owner_site_plus_250m_geographic_block_holdout",
+              "conflicting_label_pixels_excluded":len(conflict_pixels),
+              "spatial_blocks_m":250,
               "can_claim_global_performance":False,
               "training_data_source":"Owner-reviewed GitHub issue labels with dated, independent evidence URL",
               "never_train_on_unsourced_labels":True}
@@ -95,7 +141,7 @@ def produce(features,labels,out,overlay):
               accuracy=None,precision=None,recall=None,confusion_matrix=None)
             return save(base)
         try:
-            train,test,seed=site_group_split(y,[r["site_group"] for r in accepted])
+            train,test,seed=site_group_split(y,geographic_groups)
         except RuntimeError as e:
             base.update(status="insufficient_groups",message=str(e),
                         accuracy=None,precision=None,recall=None,confusion_matrix=None)
@@ -114,8 +160,8 @@ def produce(features,labels,out,overlay):
             warning="Tiny labeled dataset; metrics only apply to these held-out sites, NOT other cities.",
             n_train=int(len(train)),n_test=int(len(test)),
             group_split_seed=int(seed),
-            train_site_groups=sorted(set(accepted[i]["site_group"] for i in train)),
-            test_site_groups=sorted(set(accepted[i]["site_group"] for i in test)),
+            train_site_groups=sorted(set(geographic_groups[i] for i in train)),
+            test_site_groups=sorted(set(geographic_groups[i] for i in test)),
             class_names=list(CLASSES),confusion_matrix=matrix,
             balanced_accuracy=round(float(balanced_accuracy_score(y[test],predicted)),3),
             precision={k:round(float(scores[k]["precision"]),3) for k in CLASSES},
