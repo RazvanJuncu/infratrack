@@ -53,3 +53,43 @@ test('recent Q&A excludes fabricated legacy v2 labels',()=>{
  label:'agriculture',status:'provisional_not_ground_truth',training_eligible:false})};
  assert.equal(quiz.loadDraft(store,it),null);
 });
+
+
+const preview=require('../site/custom_preview.js');
+
+test('custom on-demand preview accepts actual European UTM projections',()=>{
+ assert.equal(preview.isUTM(32631),true);
+ assert.equal(preview.isUTM(32635),true);
+ assert.equal(preview.isUTM(32735),true);
+ assert.equal(preview.isUTM(4326),false);
+ assert.match(preview.UTMDefinition(32631),/zone=31/);
+ const bbox=preview.geoBounds({lat:48.8584,lon:2.2945,size_km:2});
+ assert.ok(bbox[2]>bbox[0]&&bbox[3]>bbox[1]);
+});
+test('preview rejects scenes without actual visual COGs and selects recent acquisition days',()=>{
+ const item=(id,date,cloud,visual)=>({
+  id,properties:{datetime:date+'T10:00:00Z','eo:cloud_cover':cloud},
+  assets:visual?{visual:{href:'https://example.com/'+id+'.tif'}}:{thumbnail:{href:'https://example.com/'+id+'.jpg'}}
+ });
+ const scenes=preview.chooseItems([
+   item('older','2026-10-10',10,true),
+   item('cloudy','2026-10-22',90,true),
+   item('recent','2026-10-29',35,true),
+   item('thumbnail','2026-10-31',5,false)
+ ],90,new Date('2026-11-04T12:00:00Z'));
+ assert.deepEqual(scenes.map(x=>x.id),['recent','older']);
+});
+test('preview aligns geographic crop to COG pixel coordinate window',()=>{
+ const img={
+  getOrigin:()=>[500000,5200000],
+  getResolution:()=>[10,-10],
+  getWidth:()=>11000,getHeight:()=>11000
+ };
+ assert.deepEqual(preview.pixelWindow(img,[500100,5199700,500300,5199900]),
+   [10,10,30,30]);
+ assert.throws(()=>preview.pixelWindow(img,[490000,5199700,500300,5199900]));
+});
+test('local scene classification excludes clouds',()=>{
+ assert.equal(preview.localClear([4,5,6,7,8,9]),.5);
+ assert.equal(preview.localClear([]),0);
+});
