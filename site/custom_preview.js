@@ -223,7 +223,7 @@ async function renderSelected(area,items,options={}) {
    scenes:rendered,
    locallyScreened:rendered.every(x=>x.cloudFraction!==null),
    note:rendered.every(x=>x.cloudFraction!==null)?
-     "Both locally screened where applicable. Cloud cover percentages on cards are whole-scene values.":
+     "The selected observation(s) passed local SCL clear-pixel screening. Card cloud percentages are whole-scene values.":
      "At least one local cloud mask was unavailable; the selected scene(s) may include clouds.",
    selectionIsExact:true};
 }
