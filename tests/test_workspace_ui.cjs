@@ -20,7 +20,7 @@ test('European watchlist can reuse v0.8 local saved areas',()=>{
  assert.ok(b[0]<area.lon&&b[2]>area.lon);
 });
 test('timeline keeps unique actual dates and prefers complete and visual scenes',()=>{
- const sources=[sample('partial','2026-10-04',0,[26,44.3,26.05,44.5]),
+ const sources=[sample('partial','2026-10-04',0,[26.03,44.3,26.05,44.5]),
                 sample('correct','2026-10-04',12),
                 sample('older','2026-09-09',0),
                 sample('cloud','2026-11-03',99)];
