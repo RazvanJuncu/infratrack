@@ -46,6 +46,12 @@ h1{font-size:clamp(24px,3vw,33px);letter-spacing:-.9px;margin:0}h2{font-size:17p
 #canvasViewport .chip{position:absolute;top:10px;padding:5px 8px;background:#081a21dc;border-radius:6px;font-size:11px;pointer-events:none}
 #canvasViewport .chip.left{left:10px}#canvasViewport .chip.right{right:10px}
 #canvasViewport #changeLayer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#canvasViewport #unregisteredPair{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:3px;background:#152a33}
+#unregisteredPair figure{margin:0;min-width:0;display:flex;flex-direction:column;justify-content:center}
+#unregisteredPair figure img{position:static;width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+#unregisteredPair figcaption{text-align:center;font-size:11px;color:#d8e6e7;padding:7px 3px}
+#alignmentState{font-size:12px;color:#8eddd0;margin-top:10px}
+#alignmentState.unverified{color:#f0bd83}
 #emptyCanvas{height:100%;padding:24px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:9px;color:#abc3c8}
 #emptyCanvas strong{font-size:18px;color:var(--text)}
 #canvasStatus{font-size:12px;color:#afdbd3;margin-top:10px;min-height:20px}
@@ -114,11 +120,16 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
      <img id="canvasNew" alt="Later selected Sentinel satellite image" hidden>
      <div id="canvasDivider" hidden></div>
      <div id="canvasLabels" hidden><span id="labelOld" class="chip left">BEFORE</span><span id="labelNew" class="chip right">AFTER</span></div>
-     <canvas id="changeLayer" hidden aria-label="Experimental raw visual difference highlight"></canvas>
+     <canvas id="changeLayer" hidden aria-label="Experimental cloud-masked and geometrically aligned visual difference highlight"></canvas>
+     <div id="unregisteredPair" hidden aria-label="Unregistered source images displayed side-by-side">
+        <figure><img id="unregisteredBefore" alt="Earlier satellite image, alignment not verified"><figcaption id="unregisteredBeforeDate">Earlier observation</figcaption></figure>
+        <figure><img id="unregisteredAfter" alt="Later satellite image, alignment not verified"><figcaption id="unregisteredAfterDate">Later observation</figcaption></figure>
+     </div>
    </div>
    <div id="compareControls" hidden>
       <span>Before</span><input id="compareRange" type="range" min="0" max="100" value="50" aria-label="Reveal newer satellite image"><span>After</span>
    </div>
+   <p id="alignmentState" class="unverified" role="status">Geometric alignment has not been checked.</p>
    <p id="canvasStatus" role="status">No satellite image selected.</p>
    <div class="canvas-footer">
      <button type="button" id="highlightBtn" aria-pressed="false" disabled>Highlight differences · experimental</button>
@@ -157,5 +168,6 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
 <script src="custom_preview.js"></script>
 <script src="monitor_workspace_core.js"></script>
+<script src="image_registration.js"></script>
 <script src="monitor_workspace.js"></script>
 </body></html>
