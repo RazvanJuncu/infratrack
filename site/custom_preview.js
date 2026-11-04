@@ -87,7 +87,7 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
  const bbox=projectedBounds(area,epsg,proj4);
  pixelWindow(im,bbox);
  if(im.getSamplesPerPixel()<3)throw Error("Original image does not contain three RGB bands");
- let cloudFraction=null,localCheckError=null;
+ let cloudFraction=null,localCheckError=null,cloudMask=null;
  const scl=urlAsset(item,"scl");
  if(scl){
    try{
@@ -100,10 +100,16 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
      const sclBounds=projectedBounds(area,sclProjection,proj4);
      pixelWindow(sclImage,sclBounds);
      const sample=await sclTiff.readRasters({
-       bbox:sclBounds,width:96,height:96,samples:[0],interleave:true,
+       bbox:sclBounds,width:G.outputSize,height:G.outputSize,samples:[0],interleave:true,
        resampleMethod:"nearest"
      });
      cloudFraction=localClear(sample);
+     cloudMask=new Uint8Array(sample.length);
+     for(let i=0;i<sample.length;i++){
+       // Sentinel SCL: vegetation (4), bare surfaces (5), water (6).
+       // Clouds/shadows/snow/unclassified are not trusted for change detection.
+       cloudMask[i]=(sample[i]===4||sample[i]===5||sample[i]===6)?1:0;
+     }
    }catch(err){localCheckError=String(err?.message||err);}
  }else localCheckError="SCL asset missing";
  if(signal?.aborted)throw Error("Cancelled");
@@ -143,7 +149,7 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
    id:item.id,date:itemDate(item),cloudFraction,
    globalCloud:Number(item.properties["eo:cloud_cover"]),
    image:canvas.toDataURL("image/png"),
-   rgba:bytes,width:size,height:size,
+   rgba:bytes,width:size,height:size,cloudMask,
    epsg,sourceAsset:url,
    localCheckError,
    warning:cloudFraction===null?
