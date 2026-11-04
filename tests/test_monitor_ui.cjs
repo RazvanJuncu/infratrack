@@ -93,3 +93,41 @@ test('local scene classification excludes clouds',()=>{
  assert.equal(preview.localClear([4,5,6,7,8,9]),.5);
  assert.equal(preview.localClear([]),0);
 });
+
+test('clicking one observation selects it, second adds it, third replaces oldest',()=>{
+ let picked=[];
+ picked=monitor.toggleSceneIds(picked,'2026-10-04-A');
+ assert.deepEqual(picked,['2026-10-04-A']);
+ picked=monitor.toggleSceneIds(picked,'2026-09-09-B');
+ assert.deepEqual(picked,['2026-10-04-A','2026-09-09-B']);
+ picked=monitor.toggleSceneIds(picked,'2026-09-09-B');
+ assert.deepEqual(picked,['2026-10-04-A']);
+ picked=monitor.toggleSceneIds(picked,'2026-09-09-B');
+ picked=monitor.toggleSceneIds(picked,'2026-10-24-C');
+ assert.deepEqual(picked,['2026-09-09-B','2026-10-24-C']);
+ assert.deepEqual(monitor.orderedScenes([
+   {date:'2026-10-04',id:'a'},{date:'2026-09-09',id:'b'}
+ ]).map(x=>x.date),['2026-09-09','2026-10-04']);
+});
+test('overlay reveals precisely the requested newer-image fraction',()=>{
+ assert.equal(monitor.clipValue(0),'inset(0 100% 0 0)');
+ assert.equal(monitor.clipValue(50),'inset(0 50% 0 0)');
+ assert.equal(monitor.clipValue(100),'inset(0 0% 0 0)');
+ assert.equal(monitor.clipValue(200),'inset(0 0% 0 0)');
+});
+test('explicit scene selection preserves its exact IDs and accepts a single scene',()=>{
+ const scene=(id,date)=>({
+   id,properties:{datetime:date+'T10:40:00Z','eo:cloud_cover':0},
+   assets:{visual:{href:'https://real-source.example/'+id+'.tif'}}
+ });
+ const a=scene('specific-2026-10-04','2026-10-04');
+ const b=scene('specific-2026-09-09','2026-09-09');
+ assert.deepEqual(preview.exactSelection([a]).map(x=>x.id),[a.id]);
+ assert.deepEqual(preview.exactSelection([a,b]).map(x=>x.id),[b.id,a.id]);
+ assert.throws(()=>preview.exactSelection([a,a]),/unique/);
+ assert.throws(()=>preview.exactSelection([]),/one or two/);
+ assert.throws(()=>preview.exactSelection([a,b,scene('c','2026-10-24')]),/one or two/);
+ assert.throws(()=>preview.exactSelection([{
+   ...a,assets:{thumbnail:{href:'https://real-source.example/preview.png'}}
+ }]),/visual asset/);
+});
