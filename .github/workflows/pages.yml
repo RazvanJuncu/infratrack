@@ -22,6 +22,8 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Run deterministic tests
         run: python -m unittest discover -s tests -v
+      - name: Test four-button browser review logic
+        run: node --test tests/test_quick_label.cjs
       - name: Resolve mapped corridor and analyze real Sentinel-2
         shell: bash
         run: |
