@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>InfraTrack · Brand Lab</title>
+<link rel="icon" type="image/svg+xml" href="mark.svg">
+<link rel="stylesheet" href="brand.css">
+<style>
+body{margin:0}
+main{max-width:1120px;margin:0 auto;padding:42px 22px 80px}
+header{border-bottom:1px solid var(--border);padding:16px 22px}
+header .bar{max-width:1120px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+header a{color:var(--text);font-size:13px;text-decoration:none}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--teal);font-weight:650;margin:0 0 14px}
+h1{font-size:clamp(32px,5.5vw,58px);line-height:1.08;font-weight:600;letter-spacing:-.06em;margin:0 0 13px}
+h2{font-size:21px;font-weight:600;letter-spacing:-.03em}
+.intro{color:var(--muted);font-size:15px;max-width:660px;line-height:1.6;margin:0 0 26px}
+.studio{display:grid;grid-template-columns:minmax(220px,290px) minmax(0,1fr);gap:18px}
+.panelx{background:var(--panel);border:1px solid var(--border);border-radius:13px}
+.names{padding:16px;display:flex;flex-direction:column;gap:8px;align-self:start}
+.names h2{margin:0 0 7px}
+.names button{padding:14px;text-align:left;background:#1B2B33;border:1px solid var(--border);border-radius:9px;color:var(--text)}
+.names button:hover{border-color:#65897F}
+.names button.active{background:#213E39;border-color:var(--teal)}
+.names button strong{font-size:16px;display:block;letter-spacing:-.025em;font-weight:600}
+.names button small{font-size:11px;color:var(--muted);display:block;margin-top:3px}
+.preview{padding:28px 30px 32px;overflow:hidden;background:
+ radial-gradient(circle at 100% 0%,#21403C30 0%,transparent 38%),
+ var(--panel)}
+.pretop{display:flex;align-items:center;gap:12px;margin-bottom:45px}
+.pretop img{width:42px;height:42px;padding:6px;border:1px solid #456C62;border-radius:11px;background:#1A3531}
+.pretop .word{font-size:24px;font-weight:650;letter-spacing:-.055em}
+.pretop .word::after{content:".";color:var(--teal)}
+.pretop .descriptor{font-size:10px;letter-spacing:.13em;color:var(--muted);margin-top:3px}
+.display{font-weight:580;font-size:clamp(29px,4vw,46px);letter-spacing:-.052em;line-height:1.08;max-width:540px}
+.display span{color:var(--teal)}
+.preview .explain{max-width:510px;color:var(--muted);line-height:1.65;margin:20px 0 24px}
+.mock-button{border:1px solid var(--teal);border-radius:9px;background:var(--teal);color:#102923;padding:10px 15px;font-weight:650;display:inline-flex}
+.micro{font-family:var(--brand-mono);font-size:11px;color:var(--muted);margin-top:39px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.rule{height:1px;background:var(--border);margin:26px 0}
+.decision{margin-top:18px;background:#15242B;border:1px solid var(--border);padding:16px;border-radius:12px;color:var(--muted);font-size:13px;line-height:1.55}
+.decision strong{color:var(--text)}
+.palette{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:11px;margin-top:13px}
+.chip{min-height:85px;border-radius:10px;border:1px solid #ffffff14}
+.swatch label{display:block;font-size:12px;font-weight:600;margin-top:8px}
+.swatch code{display:block;font:11px var(--brand-mono);color:var(--muted);margin-top:3px}
+.section{margin-top:40px}
+.section>p{color:var(--muted);max-width:760px;line-height:1.6}
+.typegrid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:16px}
+.typepanel{padding:24px}
+.specimen{font-size:clamp(30px,3.6vw,44px);letter-spacing:-.05em;font-weight:580;margin:10px 0 13px}
+.mono{font-family:var(--brand-mono);font-size:14px;line-height:1.9;overflow-wrap:anywhere;color:#C2D2D4}
+.small{font-size:12px;color:var(--muted)}
+.fine{font-size:12px;color:var(--muted);line-height:1.6;margin-top:22px}
+@media(max-width:760px){main{padding:25px 14px 50px}.studio{grid-template-columns:1fr}.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.names h2{grid-column:1/-1}.preview{padding:20px}.palette{grid-template-columns:repeat(3,minmax(0,1fr))}.typegrid{grid-template-columns:1fr}.pretop{margin-bottom:28px}}
+</style>
+</head><body>
+<header><div class="bar"><a href="./" style="display:flex;align-items:center;gap:8px"><img src="mark.svg" width="25" height="25" alt="">InfraTrack</a><span class="small">IDENTITY EXPLORATION · NOT A FINAL NAME</span></div></header>
+<main>
+<p class="eyebrow">Quiet Precision · brand study 01</p>
+<h1>A name for a changing world.</h1>
+<p class="intro">An earth-observation workspace for the places that matter. Choose a naming direction and see how it looks in the same visual system. This is a brand exploration, not a product rename.</p>
+<div class="studio">
+<section class="panelx names" aria-label="Choose a name to preview">
+<h2>Naming concepts</h2>
+<button class="active" type="button" data-name="wherewhile" aria-pressed="true"><strong>wherewhile</strong><small>where + while · space meets time</small></button>
+<button type="button" data-name="terrafter" aria-pressed="false"><strong>terrafter</strong><small>terra + thereafter · earthly change</small></button>
+<button type="button" data-name="plotshift" aria-pressed="false"><strong>plotshift</strong><small>plot of land + shift / plot twist</small></button>
+<button type="button" data-name="infratrack" aria-pressed="false"><strong>InfraTrack</strong><small>current name · functional baseline</small></button>
+</section>
+<div>
+<section class="panelx preview" aria-label="Brand preview">
+<div class="pretop">
+<img src="mark.svg" alt="Two overlapping observation frames">
+<div><div id="previewWord" class="word">wherewhile</div><div class="descriptor">EARTH CHANGE INTELLIGENCE</div></div>
+</div>
+<div id="previewHeadline" class="display">See what changes.<br><span>Where it matters.</span></div>
+<p id="previewDescription" class="explain">Follow the places that matter. Compare satellite observations over time and inspect what has changed — without losing sight of the original evidence.</p>
+<div class="mock-button">Explore a place</div>
+<div class="micro"><span>MONITOR</span><span>·</span><span>COMPARE</span><span>·</span><span>UNDERSTAND</span></div>
+</section>
+<div class="decision" id="decisionNote"><strong>Why it works:</strong> "Where" gives the place; "while" suggests passage of time. A distinctive, calm name, though less immediately self-explanatory than InfraTrack.</div>
+</div>
+</div>
+<section class="section">
+<h2>Color system</h2>
+<p>Dark, quiet surfaces allow satellite imagery to carry the visual complexity. Mint signals interaction, amber signals compromised observations, coral marks raw visual differences.</p>
+<div class="palette">
+<div class="swatch"><div class="chip" style="background:#0C131B"></div><label>Midnight</label><code>#0C131B</code></div>
+<div class="swatch"><div class="chip" style="background:#17232D"></div><label>Slate</label><code>#17232D</code></div>
+<div class="swatch"><div class="chip" style="background:#34434E"></div><label>Mineral</label><code>#34434E</code></div>
+<div class="swatch"><div class="chip" style="background:#EEF3F1"></div><label>Frost</label><code>#EEF3F1</code></div>
+<div class="swatch"><div class="chip" style="background:#A3E4D1"></div><label>Sage Mint</label><code>#A3E4D1</code></div>
+<div class="swatch"><div class="chip" style="background:#DFB97E"></div><label>Amber</label><code>#DFB97E</code></div>
+</div>
+</section>
+<section class="section">
+<h2>Typography</h2>
+<p>Geist Sans for the interface and headline; Geist Mono for coordinates, acquisition dates and technical provenance.</p>
+<div class="typegrid">
+<div class="panelx typepanel"><div class="small">GEIST SANS · INTERFACE</div><div class="specimen">Every place tells<br>a story.</div><div class="small">Regular 400 · Medium 500 · Semibold 600</div></div>
+<div class="panelx typepanel"><div class="small">GEIST MONO · DATA</div><div class="mono" style="margin-top:12px">2026-10-21<br>48.85840° N<br>02.29450° E<br>Sentinel-2 L2A</div></div>
+</div>
+</section>
+<p class="fine">The displayed names are candidates only. A basic web search does not establish domain availability, trademark clearance, or legal exclusivity. "PlotShift" has existing business uses; do not launch under it without clearance. No hosted AI or satellite-inference capability is implied by this conceptual brand preview.</p>
+</main>
+<script>
+(function(){
+const concepts={
+ wherewhile:{name:"wherewhile",headline:"See what changes.",accent:"Where it matters.",description:"Follow the places that matter. Compare satellite observations over time and inspect what has changed — without losing sight of the original evidence.",note:'"Where" gives the place; "while" suggests passage of time. A distinctive, calm name, though less immediately self-explanatory than InfraTrack.'},
+ terrafter:{name:"terrafter",headline:"The earth, then.",accent:"The earth, now.",description:"A time-aware perspective on land and infrastructure. Explore the history of a place with observations grounded in real satellite imagery.",note:'Terra + thereafter creates a compact coined word, although pronunciation and existing-name clearance still need testing.'},
+ plotshift:{name:"plotshift",headline:"Every plot",accent:"has a story.",description:"Reveal how sites and landscapes evolve, from fields and forests to construction and new infrastructure.",note:'Clear land/change double meaning, but PlotShift is already used by several businesses. This is a visual comparison, not a cleared name.'},
+ infratrack:{name:"InfraTrack",headline:"See the ground.",accent:"Know the change.",description:"Monitor locations and review real satellite observations with a precise, evidence-led comparison workspace.",note:'Current project name is familiar, but sounds limited to infrastructure, while the product now monitors far more than roads and construction.'}
+};
+const buttons=[...document.querySelectorAll('[data-name]')];
+const choose=(key)=>{
+const v=concepts[key];if(!v)return;
+document.getElementById('previewWord').textContent=v.name;
+document.getElementById('previewHeadline').replaceChildren(
+ document.createTextNode(v.headline),document.createElement('br'),
+ Object.assign(document.createElement('span'),{textContent:v.accent}));
+document.getElementById('previewDescription').textContent=v.description;
+document.getElementById('decisionNote').replaceChildren(
+ Object.assign(document.createElement('strong'),{textContent:'Why it works: '}),
+ document.createTextNode(v.note));
+buttons.forEach(b=>{b.classList.toggle('active',b.dataset.name===key);
+b.setAttribute('aria-pressed',String(b.dataset.name===key))});
+};
+buttons.forEach(b=>b.addEventListener('click',()=>choose(b.dataset.name)));
+})();
+</script>
+</body></html>
