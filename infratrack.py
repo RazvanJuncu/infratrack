@@ -46,10 +46,14 @@ def search_scenes(lat, lon, size_m, date_range, cloud_limit):
     half = size_m / 2
     west, south = inverse.transform(x - half, y - half)
     east, north = inverse.transform(x + half, y + half)
+    start, end = date_range.split("/")
+    # STAC Search requires RFC3339 timestamps (not plain YYYY-MM-DD intervals).
+    when = f"{start}T00:00:00Z/{end}T23:59:59Z"
     body = {"collections": [COLLECTION], "bbox": [west, south, east, north],
-            "datetime": date_range, "limit": 100}
+            "datetime": when, "limit": 100}
     resp = requests.post(STAC, json=body, timeout=60)
-    resp.raise_for_status()
+    if not resp.ok:
+        raise RuntimeError(f"STAC HTTP {resp.status_code}: {resp.text[:900]} | query={body}")
     found = [i for i in resp.json().get("features", [])
              if i.get("properties", {}).get("eo:cloud_cover", 100) <= cloud_limit]
     return sorted(found, key=lambda i: i["properties"].get("eo:cloud_cover", 100))
