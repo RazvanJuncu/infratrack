@@ -8,6 +8,28 @@
 :root{color-scheme:dark;--bg:#070d13;--panel:#121d27;--border:#263a48;--muted:#99b0c0;--green:#47dfba}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse 90% 60% at 85% 0%,#112a32 0%,transparent 55%),var(--bg);color:#edf8fd;font:15px/1.5 system-ui,Segoe UI,Inter,sans-serif}header{height:73px;border-bottom:1px solid #293844;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,70px)}.brand{font-size:22px;letter-spacing:-1px;font-weight:850}.brand b{color:var(--green)}.tag{font-size:11px;letter-spacing:1.6px;color:var(--green);font-weight:750;border:1px solid #235c53;border-radius:99px;padding:6px 11px}.wrap{max-width:1250px;margin:0 auto;padding:42px 24px 70px}.eyebrow{color:var(--green);font-size:12px;font-weight:750;letter-spacing:2px}h1{font-size:clamp(30px,5vw,53px);letter-spacing:-2px;line-height:1.08;margin:12px 0}.sub{color:var(--muted);max-width:770px;margin:12px 0 26px}a{color:#78eacb}.status{border:1px solid var(--border);background:#10212c;padding:12px 16px;border-radius:12px;color:#b9d5e1;margin:16px 0 22px}.status.warn{background:#261f17;border-color:#745434;color:#f4c88a}.grid{display:grid;grid-template-columns:1.5fr .7fr;gap:17px}.panel{border:1px solid var(--border);border-radius:16px;background:#101a24;padding:19px;min-width:0}.panelhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.panel h2{font-size:17px;margin:0}.pill{font-size:12px;color:#b8d0d8;background:#1c2b36;padding:6px 10px;border:1px solid #304553;border-radius:8px}.viewport{background:linear-gradient(135deg,#0a1922,#203440);border-radius:12px;overflow:hidden;position:relative;aspect-ratio:1.2;max-height:620px;touch-action:none;user-select:none}.viewport img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill;pointer-events:none}.viewport .right{clip-path:inset(0 0 0 50%)}.line{position:absolute;left:50%;height:100%;width:2px;background:white;box-shadow:0 0 15px #fff8;pointer-events:none}.handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:white;color:#18212a;font-weight:800;box-shadow:0 0 0 5px #fff3;pointer-events:none}.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:30px;color:#b6cbd8;font-weight:650}.dates{display:flex;justify-content:space-between;color:#b2c8d4;font-size:12px;padding:8px 0}.controls{display:flex;gap:8px;margin:16px 0 0;flex-wrap:wrap}button{background:#1a2b37;border:1px solid #354957;color:#cde1eb;padding:10px 15px;border-radius:9px;cursor:pointer;font-weight:650}button.active{background:#134b45;border-color:#32b79b;color:white}button:disabled{opacity:.4;cursor:not-allowed}.metric{padding:17px 0;border-bottom:1px solid #2b3c49}.metric small{font-size:12px;color:var(--muted);display:block}.metric strong{display:block;font-size:28px;line-height:1.25;letter-spacing:-1px}.meta{font-size:12px;overflow-wrap:anywhere;color:#a4bdcd}.meta b{color:#f1fbff}ul{padding-left:19px;color:#a8bfcd}li{margin:8px 0}footer{color:#718e9e;font-size:12px;margin-top:30px}#map{height:410px;border-radius:12px;background:#172734;z-index:0} .widepanel{margin-bottom:17px} #timeline svg{width:100%;max-height:260px} .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#a3bcc8} .legend strong{font-size:14px;color:#38dbc0} .maphint{color:#a6bdcb;font-size:12px;margin-top:10px} .micro{font-size:12px;color:#b9d0df} @media(max-width:800px){#map{height:340px}.grid{grid-template-columns:1fr}.wrap{padding-top:26px}header{padding:0 19px}.tag{font-size:9px}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s}}
  .annotation-layout{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;margin-top:16px} .field{display:flex;flex-direction:column;gap:6px;margin:12px 0;color:#aac2d0;font-size:12px} .field input,.field textarea,.field select{background:#192b37;border:1px solid #365263;border-radius:9px;padding:10px 12px;color:#efffff;font:14px system-ui;width:100%} .field textarea{min-height:70px;resize:vertical}.field input:focus,.field textarea:focus{outline:2px solid #57c6b2}.bigbtn{background:#146258;color:#f2fffb;border:1px solid #38b8a1}.bigbtn:disabled{opacity:.5}.sample-info{border-radius:12px;background:#112631;border:1px solid #314b59;padding:16px;min-height:122px}.sample-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.sample-cell{background:#192b38;padding:8px;border-radius:9px;font-size:11px;color:#b5cdd7}.sample-cell b{display:block;font-size:15px;color:#f2f9ff}.labhint{color:#8fb0c0;font-size:12px}.labstatus{color:#b7dad5;font-size:13px}.review-queue{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:9px;max-height:320px;overflow-y:auto;padding:2px 4px 7px;margin:12px 0}.review-target{background:#142934;border:1px solid #2a4b55;border-radius:10px;padding:11px;text-align:left;color:#d6e9ee;cursor:pointer}.review-target:hover{border-color:#53c7ad;background:#1b3440}.review-target.active{border-color:#4bdbb4;box-shadow:0 0 0 1px #4bdbb4}.review-target small{display:block;font-size:10px;color:#85adbf;margin:5px 0}.review-target strong{display:block;font-size:12px}.review-target span{font-size:11px;color:#a6c6d0}.validation-matrix{border-collapse:collapse;width:100%;font-size:12px}.validation-matrix td,.validation-matrix th{border:1px solid #304856;padding:7px;text-align:center} @media(max-width:850px){.annotation-layout{grid-template-columns:1fr}} 
+
+.quick-studio{border:1px solid #2e685f;border-radius:17px;background:linear-gradient(135deg,#122c30,#111d29 65%);padding:20px;margin:24px 0}
+.quick-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:21px}
+.quick-images{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.quick-img-card{background:#0b1b25;border:1px solid #2a4654;padding:10px;border-radius:13px;min-width:0}
+.quick-img-card canvas{display:block;width:100%;aspect-ratio:1/1;max-height:260px;object-fit:contain;image-rendering:pixelated;background:#11242f;border-radius:8px;margin-top:8px}
+.quick-img-card small{font-size:11px;color:#a0beca;letter-spacing:.04em}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.quick-choice{font-size:15px;padding:15px 9px;border:1px solid #46616f;background:#172f3a;color:#f2fffe;font-weight:700;min-height:56px}
+.quick-choice:hover{background:#234553}.quick-choice.chosen{border-color:#50d3b9;background:#145d54;box-shadow:inset 0 0 0 1px #50d3b9}
+.quick-choice[disabled]{opacity:.42;cursor:not-allowed}
+.quick-meter{height:8px;background:#213b44;border-radius:10px;overflow:hidden;margin:11px 0}
+.quick-meter div{height:100%;width:0;background:#42d5b3;transition:width .2s ease}
+.quick-mini-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.quick-mini-controls button{font-size:12px;padding:9px 11px}
+.quick-verify{margin-top:12px;width:100%;background:#153b38;border-color:#3b9381}
+.quick-verify:not(:disabled):hover{background:#1b514a}
+.quick-muted{color:#99b8c4;font-size:12px;line-height:1.5}
+.quick-note{font-size:12px;color:#d2ebdf;background:#1a3638;padding:9px 12px;border-radius:9px;margin-top:12px}
+#quickReview{scroll-margin-top:24px}
+@media(max-width:860px){.quick-grid{grid-template-columns:1fr}}
+@media(max-width:440px){.quick-studio{padding:13px}.quick-images{gap:7px}.quick-img-card{padding:6px}.quick-choice{font-size:13px;padding:10px 4px}}
 </style>
 </head>
 <body>
@@ -27,6 +49,50 @@
 <div id="timeline" class="micro">Awaiting real satellite observations…</div>
 <div class="legend"><span><strong>━</strong> Mapped corridor (±130 m)</span><span><span style="color:#e2a45a;font-weight:800">━</span> Adjacent land (control)</span></div>
 <p class="meta">Observations may fall on different dates and show seasonal farming. NDVI is not construction progress, and an A0 segment mapped in OSM is not an official as-built survey.</p>
+</section>
+<section class="quick-studio" id="quickReview" aria-labelledby="quickHeading">
+ <div class="panelhead">
+   <div><div class="eyebrow">NEW · HUMAN-IN-THE-LOOP</div><h2 id="quickHeading" style="font-size:22px;margin:6px 0 0">Quick Review</h2></div>
+   <span class="pill" id="quickProgress">Loading real examples…</span>
+ </div>
+ <p class="quick-muted">Look at a real Sentinel before/after crop, pick one of four options, and move to the next. <b>Your choices are provisional, NOT trusted AI training labels.</b> You only need independent evidence if you later decide to verify one.</p>
+ <div class="quick-meter" role="progressbar" aria-label="Examples reviewed"><div id="quickProgressBar"></div></div>
+ <div class="quick-grid">
+   <div>
+     <div class="quick-images">
+       <div class="quick-img-card">
+         <small>BEFORE · <span id="quickBeforeDate">—</span></small>
+         <canvas id="quickBefore" width="260" height="260" aria-label="Unmodified real Sentinel before crop with 10m pixel crosshair"></canvas>
+       </div>
+       <div class="quick-img-card">
+         <small>AFTER · <span id="quickAfterDate">—</span></small>
+         <canvas id="quickAfter" width="260" height="260" aria-label="Unmodified real Sentinel after crop with 10m pixel crosshair"></canvas>
+       </div>
+     </div>
+     <p class="quick-muted" id="quickImageWarning">Both crops come from the original 10 m Sentinel images. The white box marks the selected pixel. A 480 m neighborhood is shown; this is not high-resolution aerial imagery.</p>
+   </div>
+   <div>
+     <div class="eyebrow">WHAT DO YOU THINK CHANGED?</div>
+     <h3 id="quickCandidateName" style="font-size:19px;margin:5px 0">Loading suggested location…</h3>
+     <p class="quick-muted" id="quickCandidateDetail">Satellite data loading</p>
+     <div class="quick-actions" aria-label="Provisional visual classification choices">
+       <button type="button" class="quick-choice" id="quickConstruction">🏗️ Construction</button>
+       <button type="button" class="quick-choice" id="quickAgriculture">🌾 Agriculture</button>
+       <button type="button" class="quick-choice" id="quickUnchanged">◻ Unchanged</button>
+       <button type="button" class="quick-choice" id="quickUnsure">? Unsure / Skip</button>
+     </div>
+     <p id="quickDraftState" class="quick-muted">Not classified</p>
+     <div class="quick-mini-controls">
+       <button type="button" id="quickPrev">← Previous</button>
+       <button type="button" id="quickNext">Next →</button>
+       <button type="button" id="quickUndo">Undo</button>
+       <button type="button" id="quickExport">Export backup</button>
+     </div>
+     <button type="button" id="quickVerify" class="quick-verify">Verify selected draft for AI training</button>
+     <div class="quick-note" role="status" id="quickReviewStatus">Selections will be kept separate from model training.</div>
+     <p id="quickPersistence" class="quick-muted">Loading browser storage status…</p>
+   </div>
+ </div>
 </section>
 <div class="grid">
 <section class="panel">
@@ -66,7 +132,7 @@
 </aside>
 </div>
 <section class="panel widepanel" id="validationLab" style="margin-top:20px">
-<div class="panelhead"><h2>v0.6 · Guided Validation Lab</h2><span class="pill">Verified evidence before model claims</span></div>
+<div class="panelhead"><h2>Advanced · Evidence and model validation</h2><span class="pill">Verified evidence before model claims</span></div>
 <p class="meta">Select a real Sentinel pixel and inspect NDVI, BSI and NDBI across four observations. Add a documented label using independent dated evidence, not just the same satellite image being classified. An experimental Random Forest will be trained only after enough sourced labels exist across separate geographic sites.</p>
 <div class="controls">
 <label class="pill" style="cursor:pointer"><input id="inspectMode" type="checkbox"/> Inspect pixel on image (disables comparison slider while enabled); map clicks always inspect</label>
@@ -91,8 +157,9 @@
     <div class="status" id="modelStatus" style="margin-top:15px">Reading validation dataset status…</div>
     <div id="modelMetrics" class="micro"></div>
   </div>
-  <div>
-    <h2 style="margin-bottom:8px">Document an example</h2>
+  <div id="evidencePanel" style="display:none">
+    <h2 style="margin-bottom:8px">Verify with independent evidence</h2>
+    <p class="quick-muted">Only verified labels are eligible to be evaluated for model training. Quick selections never count automatically.</p>
     <label class="field">Ground-truth class
       <select id="labelClass"><option value="construction">Construction change</option><option value="agriculture">Agricultural or harvest change</option><option value="unchanged">Unchanged surface</option></select>
     </label>
@@ -118,6 +185,7 @@
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+<script src="quick_label.js"></script>
 <script>
 let result, mode='rgb', position=50;
 let labPack=null, rawArrays=null, worldClasses=null, corridorMask=null, chosenSample=null, mapRef=null, markerRef=null;
