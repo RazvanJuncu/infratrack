@@ -63,26 +63,32 @@ def fetch_route():
                 "complete_lot_verified":False}
     except Exception as exc:
         print(f"OSM Overpass unavailable: {exc}",flush=True)
-    try:
-        # A single mapped segment near DN2/DN3 for reduced-scope, honest fallback.
-        url = f"https://api.openstreetmap.org/api/0.6/way/{FALLBACK_ID}/full"
-        response = requests.get(url,headers={"User-Agent":UA},timeout=30)
-        response.raise_for_status()
-        root=ET.fromstring(response.content)
-        nodes={}
-        for e in root.findall("node"):
-            nodes[e.attrib["id"]]=[float(e.attrib["lon"]),float(e.attrib["lat"])]
-        w=next(e for e in root.findall("way") if e.attrib["id"]==str(FALLBACK_ID))
-        tags={e.attrib["k"]:e.attrib["v"] for e in w.findall("tag")}
-        geom=[{"lon":nodes[n.attrib["ref"]][0],"lat":nodes[n.attrib["ref"]][1]}
-              for n in w.findall("nd") if n.attrib["ref"] in nodes]
-        out=_features([{"id":FALLBACK_ID,"tags":tags,"geometry":geom}])
-        if out["features"]:
-            return out,{"source":"OpenStreetMap/0.6 way/full fallback",
-                "query_url":url,"fetched_way_ids":[FALLBACK_ID],
-                "complete_lot_verified":False}
-    except Exception as exc:
-        print(f"OSM fallback unavailable: {exc}",flush=True)
+    # OSM official API fallback. Fetch 7 well-defined centerline ways of
+    # the lot, not the full regional motorway. A failed way remains absent.
+    selected = [1164871800, 1164871801, 254738263, 1517261128,
+                697840869, 697840870, 1339845940]
+    recovered=[]
+    for way_id in selected:
+        try:
+            url=f"https://api.openstreetmap.org/api/0.6/way/{way_id}/full"
+            response=requests.get(url,headers={"User-Agent":UA},timeout=16)
+            response.raise_for_status()
+            root=ET.fromstring(response.content)
+            nodes={e.attrib["id"]:[float(e.attrib["lon"]),float(e.attrib["lat"])]
+                   for e in root.findall("node")}
+            way=next(w for w in root.findall("way") if w.attrib["id"]==str(way_id))
+            tags={e.attrib["k"]:e.attrib["v"] for e in way.findall("tag")}
+            geom=[{"lon":nodes[n.attrib["ref"]][0],"lat":nodes[n.attrib["ref"]][1]}
+                  for n in way.findall("nd") if n.attrib["ref"] in nodes]
+            recovered.append({"id":way_id,"tags":tags,"geometry":geom})
+        except Exception as exc:
+            print(f"OSM way {way_id} retrieval unavailable: {str(exc)[:120]}",flush=True)
+    geometry=_features(recovered)
+    if geometry["features"]:
+        return geometry,{"source":"OpenStreetMap/0.6 way/full fallback",
+            "query_url":"https://api.openstreetmap.org/api/0.6/way/{way_id}/full",
+            "fetched_way_ids":[f["properties"]["osm_way_id"] for f in geometry["features"]],
+            "complete_lot_verified":False}
     return {"type":"FeatureCollection","features":[]},{"source":"unavailable",
         "fetched_way_ids":[],"complete_lot_verified":False}
 
