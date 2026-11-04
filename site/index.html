@@ -339,7 +339,7 @@ function renderTimeline(series){
 }
 
 
-let reviewQueue=null,reviewFilter="all",selectedReviewId=null;
+let reviewQueue=null,reviewFilter="all",selectedReviewId=null,quickReviewApp=null;
 const categoryFilters={
  reviewBare:"persistent_bare_hypothesis",
  reviewSeasonal:"seasonal_regrowth_hypothesis",
@@ -363,9 +363,46 @@ async function loadReviewQueue(){
       throw Error('Suggestions do not match the loaded real satellite scene IDs');
    el('reviewStatus').textContent=reviewQueue.candidate_count+' unverified review targets';
    renderReviewQueue();
+   if (window.InfraQuickLabel) {
+     try {
+       quickReviewApp=window.InfraQuickLabel.createApp({
+         queue:reviewQueue,
+         pack:labPack,
+         onSelect:(item,navigateMap)=>{
+           selectedReviewId=item.id;
+           selectPixel(item.row,item.col);
+           if (navigateMap && mapRef && typeof L!=='undefined') {
+             const point=L.latLng(item.lat,item.lon);
+             mapRef.setView(point,Math.max(15,mapRef.getZoom()));
+             if(markerRef)mapRef.removeLayer(markerRef);
+             markerRef=L.circleMarker(point,{
+               radius:7,weight:2,color:'#fff',fillColor:'#f6ae48',fillOpacity:1
+             }).addTo(mapRef);
+           }
+         },
+         onVerify:(item,label)=>{
+           selectPixel(item.row,item.col);
+           el('labelClass').value=label;
+           el('labelSite').value=item.site_group_suggestion ||
+             ('block_r'+String(Math.floor(item.row/25)).padStart(2,'0')+
+              '_c'+String(Math.floor(item.col/25)).padStart(2,'0'));
+           el('evidencePanel').style.display='block';
+           el('labelMessage').textContent='Your quick classification is still provisional. Add independent dated evidence to submit this one verified example.';
+           el('evidencePanel').scrollIntoView({behavior:'smooth',block:'start'});
+         }
+       });
+     } catch(err) {
+       el('quickReviewStatus').textContent='Quick Review could not load: '+err.message;
+       console.error('Quick Review initialization failed',err);
+     }
+   } else {
+     el('quickReviewStatus').textContent='Quick Review script is unavailable. Reload the site; advanced inspection still works.';
+   }
  }catch(e){
    reviewQueue=null;
    el('reviewStatus').textContent='Review suggestions unavailable';
+   el('quickReviewStatus').textContent='Quick Review unavailable: '+e.message;
+   el('quickCandidateName').textContent='No real satellite candidates available';
    el('reviewSourceHint').textContent=e.message+' — manual map/pixel inspection still works.';
  }
 }
