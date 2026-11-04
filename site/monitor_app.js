@@ -63,12 +63,30 @@ function parseScenes(response,days,reference=new Date()){
  }
  return result.slice(0,18);
 }
-const core={STORE,allowed,bounds,validCustom,readSaved,dateBounds,searchBody,parseScenes};
+// Keep a maximum of two explicit observation choices; never auto-substitute.
+function toggleSceneIds(current,id,max=2){
+ if(typeof id!=="string"||!id)return current.slice();
+ const next=current.filter(x=>x!==id);
+ if(next.length!==current.length)return next;
+ next.push(id);
+ while(next.length>max)next.shift();
+ return next;
+}
+function orderedScenes(items){
+ return items.slice().sort((a,b)=>a.date.localeCompare(b.date));
+}
+function clipValue(percent){
+ const fraction=Math.max(0,Math.min(100,Number(percent)||0));
+ return "inset(0 "+(100-fraction)+"% 0 0)";
+}
+const core={STORE,allowed,bounds,validCustom,readSaved,dateBounds,searchBody,parseScenes,toggleSceneIds,orderedScenes,clipValue};
 if(typeof module==="object"&&module.exports)module.exports=core;
 if(!global.document)return;
 const $=id=>document.getElementById(id);
 let sites=[],customs=[],selected=null,selection=null,map=null,pin=null,rect=null;
-let fetchId=0,manifest=null,visibility="ready",activePreview=null;
+let fetchId=0,manifest=null,activePreview=null;
+let catalogScenes=[],catalogById=new Map(),chosenSceneIds=[],compareMode="overlay";
+const previewCache=new Map();
 function say(s){$("monitorStatus").textContent=s;}
 function save(){
  try{localStorage.setItem(STORE,JSON.stringify(customs));return true;}
@@ -157,6 +175,11 @@ async function refreshPublished(site,request){
 async function choose(site){
  if(activePreview)activePreview.aborted=true;
  activePreview=null;
+ chosenSceneIds=[];
+ catalogScenes=[];catalogById=new Map();previewCache.clear();
+ $("singleScene").hidden=true;$("overlay").hidden=true;
+ $("pair").hidden=true;$("selectedTools").hidden=true;
+ $("selectedStatus").textContent="No dates selected · choose one or two observations below";
  selected=site;renderSites();
  $("selectionName").textContent=site.name;
  $("selectionKind").textContent=site.category==="saved"?
@@ -174,12 +197,174 @@ async function choose(site){
    }
  }else{
    ++fetchId;
-   $("imageNote").textContent="Searching real Sentinel-2 scenes for this area; preparing an on-demand before/after image crop…";
+   $("imageNote").textContent="Select one or two dates from Satellite observation history below. Only the selected real scenes will be displayed.";
  }
  await refreshCatalog();
 }
+
+function setSlider(percentage){
+ const value=Math.max(0,Math.min(100,Number(percentage)||0));
+ $("overlayAfterImage").style.clipPath=clipValue(value);
+ $("overlayDivider").style.left=value+"%";
+ $("compareSlider").value=String(value);
+}
+function setViewMode(mode){
+ compareMode=mode==="side"?"side":"overlay";
+ const paired=chosenSceneIds.length===2&&!$("selectedTools").hidden;
+ $("viewModes").hidden=!paired;
+ $("viewOverlay").setAttribute("aria-pressed",String(compareMode==="overlay"));
+ $("viewSide").setAttribute("aria-pressed",String(compareMode==="side"));
+ if(paired){
+   $("overlay").hidden=compareMode!=="overlay";
+   $("pair").hidden=compareMode!=="side";
+ }
+}
+function resetSelectedView(){
+ if(activePreview)activePreview.aborted=true;
+ activePreview=null;
+ $("singleScene").hidden=true;
+ $("overlay").hidden=true;
+ $("selectedTools").hidden=true;
+ $("viewModes").hidden=true;
+ $("pair").hidden=true;
+ $("recentSummary").textContent="";
+ if(selected?.category==="registered"&&selected?.path){
+   const request=fetchId;
+   refreshPublished(selected,request).catch(err=>{
+     if(request===fetchId)$("imageNote").textContent=
+       "Default processed image pair unavailable: "+err.message;
+   });
+ }else{
+   $("imageNote").textContent="Select one or two observations below to show the exact satellite images.";
+ }
+}
+function sceneRole(scene){
+ const matched=chosenSceneIds.map(id=>catalogScenes.find(x=>x.id===id)).filter(Boolean);
+ if(!chosenSceneIds.includes(scene.id))return null;
+ if(matched.length===1)return "Selected";
+ const sorted=orderedScenes(matched);
+ return scene.id===sorted[0]?.id?"BEFORE":"AFTER";
+}
+function renderSceneCards(){
+ const root=$("observations");
+ root.replaceChildren();
+ if(!catalogScenes.length){
+   root.append(makeElement("p",
+     "No acquisition dates found in this period. Try a longer time range; absence of imagery does not mean no ground changes.",
+     "muted"));
+ }else for(const scene of catalogScenes){
+   const button=makeElement("button",null,
+     "obs-item"+(chosenSceneIds.includes(scene.id)?" is-selected":""));
+   button.type="button";
+   const src=catalogById.get(scene.id);
+   const hasVisual=Boolean(src?.assets?.visual?.href?.startsWith("https://"));
+   button.disabled=!hasVisual;
+   button.setAttribute("aria-pressed",String(chosenSceneIds.includes(scene.id)));
+   button.setAttribute("aria-label",scene.date+" · "+(scene.cloud_percent===null?
+     "unknown scene cloud cover":scene.cloud_percent+"% whole-scene cloud cover")+
+     (hasVisual?" · select observation":" · no original image available"));
+   button.append(makeElement("strong",scene.date));
+   button.append(makeElement("span",scene.cloud_percent===null?
+      "Cloud cover unknown (whole scene)":
+      scene.cloud_percent+"% cloud cover (whole scene, not this area)"));
+   const label=sceneRole(scene);
+   if(label)button.append(makeElement("span",label+" · click to deselect","selection-role"));
+   else if(!hasVisual)button.append(makeElement("span","Original visual image unavailable","selection-role"));
+   button.onclick=()=>selectSceneId(scene.id);
+   root.append(button);
+ }
+ const picked=orderedScenes(chosenSceneIds.map(id=>catalogScenes.find(x=>x.id===id)).filter(Boolean));
+ $("selectedStatus").textContent=picked.length===0?
+   "No dates selected · click one or two dates to inspect":
+   (picked.length===1?
+     "1 date selected: "+picked[0].date+" · click a second date to compare":
+     "2 dates selected: "+picked[0].date+" (BEFORE) → "+picked[1].date+
+       " (AFTER) · click a third date to replace the earliest selected");
+}
+function selectSceneId(id){
+ if(!catalogById.has(id))return;
+ const item=catalogById.get(id);
+ if(!item?.assets?.visual?.href?.startsWith("https://"))return;
+ chosenSceneIds=toggleSceneIds(chosenSceneIds,id);
+ renderSceneCards();
+ if(!chosenSceneIds.length){resetSelectedView();return;}
+ renderExactScenes();
+}
+async function renderExactScenes(){
+ if(!selected||!chosenSceneIds.length)return;
+ if(activePreview)activePreview.aborted=true;
+ const token={aborted:false};
+ activePreview=token;
+ const currentArea=selected;
+ const sceneItems=chosenSceneIds.map(id=>catalogById.get(id)).filter(Boolean);
+ if(sceneItems.length!==chosenSceneIds.length){
+   $("imageNote").textContent="Some selected scenes were no longer in the current catalog. Refresh and reselect.";
+   return;
+ }
+ $("selectedTools").hidden=false;
+ $("viewModes").hidden=true;
+ $("singleScene").hidden=true;
+ $("overlay").hidden=true;
+ $("pair").hidden=true;
+ $("recentSummary").textContent="Loading the selected original Sentinel-2 pixels…";
+ $("imageNote").textContent="Displaying only the exact acquisition(s) you selected; there is no substitute date.";
+ $("chosenDates").textContent=orderedScenes(sceneItems.map(x=>({date:x.properties.datetime.slice(0,10)})))
+    .map(x=>x.date).join(" → ");
+ if(!global.InfraCustomPreview){
+   $("recentSummary").textContent="Satellite viewer failed to load.";
+   $("imageNote").textContent="Try reloading the page. No other scene was substituted.";
+   return;
+ }
+ try{
+   const result=await global.InfraCustomPreview.renderSelected(currentArea,sceneItems,{
+     signal:token,cache:previewCache,
+     onProgress:message=>{
+       if(!token.aborted&&selected?.id===currentArea.id)
+         $("recentSummary").textContent=message;
+     }
+   });
+   if(token.aborted||selected?.id!==currentArea.id)return;
+   const [before,after]=result.scenes;
+   $("selectedTools").hidden=false;
+   if(result.count===1){
+     $("singleImage").src=before.image;
+     $("singleDate").textContent=before.date+
+       " · scene "+before.id;
+     $("singleScene").hidden=false;
+     $("viewModes").hidden=true;
+     $("recentSummary").textContent="One exact Sentinel-2 image · "+before.date;
+   }else{
+     $("beforeImage").src=before.image;
+     $("afterImage").src=after.image;
+     $("beforeDate").textContent="BEFORE · "+before.date;
+     $("afterDate").textContent="AFTER · "+after.date;
+     $("overlayBeforeImage").src=before.image;
+     $("overlayAfterImage").src=after.image;
+     $("overlayDateBefore").textContent="BEFORE · "+before.date;
+     $("overlayDateAfter").textContent="AFTER · "+after.date;
+     $("viewModes").hidden=false;
+     setSlider(50);
+     setViewMode(compareMode);
+     $("recentSummary").textContent="Exact selected images · "+before.date+
+       " → "+after.date+" · geographically aligned 2 × 2 km crops";
+   }
+   $("imageNote").textContent=result.note+
+     " Both images cover the same geographical square; changes and cloud artifacts require interpretation.";
+   say("Selected Sentinel images loaded. No automatic interpretation or fabricated observation.");
+   if(result.count===2)$("comparisonSection").scrollIntoView({behavior:"smooth",block:"start"});
+ }catch(err){
+   if(token.aborted||selected?.id!==currentArea.id)return;
+   $("singleScene").hidden=true;
+   $("overlay").hidden=true;$("pair").hidden=true;
+   $("recentSummary").textContent="Could not display the selected observation(s).";
+   $("imageNote").textContent=err.message+
+      " The original selection remains highlighted; no alternative dates were used.";
+   say("A selected image could not be rendered. See the precise error under Recent satellite comparison.");
+ }
+}
 async function refreshCatalog(){
  if(!selected)return;
+ if(activePreview)activePreview.aborted=true;
  const request=++fetchId;
  const area=selected;
  const days=Number($("timeRange").value);
@@ -191,73 +376,26 @@ async function refreshCatalog(){
    if(!response.ok)throw Error("Catalog HTTP "+response.status);
    const data=await response.json();
    if(request!==fetchId||selected?.id!==area.id)return;
-   const scenes=parseScenes(data,days);
-   $("observations").replaceChildren();
-   if(!scenes.length){
-     $("observations").append(makeElement("p","No catalog acquisitions found in this period. This is not evidence that the ground was unchanged.","muted"));
-   }else{
-     for(const scene of scenes){
-       const item=makeElement("div",null,"obs-item");
-       item.append(makeElement("strong",scene.date));
-       item.append(makeElement("span",scene.cloud_percent===null?
-         "Scene cloud cover unknown":
-         scene.cloud_percent+"% cloud cover (whole scene, not this area)"));
-       $("observations").append(item);
-     }
-   }
+   catalogScenes=parseScenes(data,days);
+   catalogById=new Map((Array.isArray(data.features)?data.features:[])
+     .filter(x=>typeof x?.id==="string").map(x=>[x.id,x]));
+   const available=new Set(catalogScenes.map(x=>x.id));
+   chosenSceneIds=chosenSceneIds.filter(id=>available.has(id));
+   renderSceneCards();
    $("checkedAt").textContent="Catalog checked "+new Date().toLocaleString()+
-     " · "+scenes.length+" unique dates shown";
-   say("Observations are real catalog acquisitions. Imagery is checked separately for local clouds.");
-   if(area.category==="saved"){
-     if(activePreview)activePreview.aborted=true;
-     const token={aborted:false};
-     activePreview=token;
-     $("pair").hidden=true;
-     $("recentSummary").textContent="Checking actual image pixels and local cloud coverage…";
-     $("imageNote").textContent="This comparison is rendered in your browser, not preprocessed by InfraTrack's server.";
-     if(!global.InfraCustomPreview){
-       $("recentSummary").textContent="Image-rendering engine unavailable.";
-       $("imageNote").textContent="Reload to retry. Catalog dates above remain available.";
-     }else{
-       global.InfraCustomPreview.render(area,data.features,{
-         days,signal:token,
-         onProgress:detail=>{
-           if(!token.aborted&&selected?.id===area.id)
-             $("recentSummary").textContent=detail;
-         }
-       }).then(pair=>{
-         if(token.aborted||selected?.id!==area.id)return;
-         $("beforeImage").src=pair.before.image;
-         $("afterImage").src=pair.after.image;
-         $("beforeDate").textContent="BEFORE · "+pair.before.date;
-         $("afterDate").textContent="AFTER · "+pair.after.date;
-         $("pair").hidden=false;
-         $("recentSummary").textContent="Two real Sentinel-2 image crops · "+
-           pair.before.date+" → "+pair.after.date;
-         $("imageNote").textContent=pair.note+
-           " This is a visual comparison only; no automatic construction/land-cover classification for saved areas.";
-         say("Real satellite images loaded for your custom area. Saved areas still are not monitored or processed by the server.");
-       }).catch(err=>{
-         if(token.aborted||selected?.id!==area.id)return;
-         $("pair").hidden=true;
-         $("recentSummary").textContent="No usable on-demand satellite image pair.";
-         $("imageNote").textContent=err.message+
-           " · Acquisition dates remain listed below; try a longer date range or reload.";
-         say("The catalog returned data, but original image crops could not be rendered. No imagery was invented.");
-       });
-     }
-   }
- }catch(e){
+     " · "+catalogScenes.length+" unique dates shown";
+   say("Click one or two dates to load those exact Sentinel-2 images. Cloud percentages are whole-scene estimates.");
+   if(chosenSceneIds.length)renderExactScenes();
+   else if(area.category==="saved")resetSelectedView();
+ }catch(err){
    if(request!==fetchId)return;
+   catalogScenes=[];catalogById=new Map();
    $("observations").replaceChildren(makeElement("p",
-      "Live catalog unavailable: "+e.message+
-      ". You can retry. Saved areas remain on this browser.","muted"));
+      "Live catalog unavailable: "+err.message+
+      ". Refresh to retry. Saved areas remain on this browser.","muted"));
    $("checkedAt").textContent="Check failed";
-   if(area.category==="saved"){
-     $("pair").hidden=true;
-     $("imageNote").textContent="Cannot fetch actual satellite observations: "+e.message;
-     $("recentSummary").textContent="No image pair available.";
-   }
+   $("selectedStatus").textContent="No dates available · catalog could not be reached";
+   say("Satellite scene catalog unavailable; no observations have been invented.");
  }
 }
 function addArea(){
@@ -303,6 +441,10 @@ async function init(){
  $("saveArea").onclick=addArea;
  $("deleteArea").onclick=deleteArea;
  $("refresh").onclick=refreshCatalog;
+ $("clearComparison").onclick=()=>{chosenSceneIds=[];renderSceneCards();resetSelectedView();};
+ $("viewOverlay").onclick=()=>setViewMode("overlay");
+ $("viewSide").onclick=()=>setViewMode("side");
+ $("compareSlider").oninput=next=>setSlider(next.target.value);
  $("timeRange").onchange=refreshCatalog;
  $("pickArea").onclick=()=>{
     say("Click anywhere on the map within Europe, then name and save that 2 × 2 km square.");
