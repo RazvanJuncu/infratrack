@@ -19,7 +19,7 @@
 <section class="panel widepanel">
 <div class="panelhead"><h2>Live geographic context · A0 Nord Lot 3</h2><span class="pill" id="mapStatus">Loading OSM road alignment…</span></div>
 <div id="map" role="application" aria-label="Map with A0 motorway alignment and 2 km satellite study area"></div>
-<div class="maphint">Research geometry: © OpenStreetMap contributors (ODbL). The turquoise lines are mapped A0 roadways, not a cadastral project boundary. The study rectangle covers only a 2 km section.</div>
+<div class="maphint">The map opens on the 2 km test area. Satellite layers are the real processed Sentinel-2 scenes, approximately positioned from a UTM raster onto a geographic rectangle. At 10 m resolution details blur when zoomed further. Road line: © OpenStreetMap contributors (ODbL), research geometry only.</div>
 </section>
 <section class="panel widepanel">
 <div class="panelhead"><h2>Multiyear surface vegetation signal</h2><span class="pill">NDVI · not completion percentage</span></div>
@@ -37,12 +37,18 @@
   <div class="line" id="cut" hidden></div><div class="handle" id="handle" hidden>↔</div>
 </div>
 <div class="dates"><span id="date0">Before: —</span><span id="date1">After: —</span></div>
-<div class="controls"><button id="rgb" class="active" disabled>True color</button><button id="changes" disabled>All vegetation changes</button><button id="interpret" disabled>Land-cover interpretation</button><button id="corridor" disabled>Along A0 corridor</button></div>
-<div class="meta" style="margin:12px 0"><span style="color:#40dac0;font-weight:700">■</span> Persistent change outside 2021 cropland &nbsp; <span style="color:#efa943;font-weight:700">■</span> Historical cropland context &nbsp; <span style="color:#e0586c;font-weight:700">■</span> Unresolved</div>
+<div class="controls"><button id="rgb" class="active" disabled>True color</button><button id="changes" disabled>All vegetation changes</button><button id="interpret" disabled>Land-cover interpretation</button><button id="corridor" disabled>Along A0 corridor</button><button id="spectralBtn" disabled>v0.4 · Multispectral</button></div>
+<div class="meta" style="margin:12px 0">v0.4: <span style="color:#2be9bc;font-weight:700">■</span> Persistent exposed-surface hypothesis &nbsp; <span style="color:#6a89db;font-weight:700">■</span> Likely seasonal crop regrowth &nbsp; <span style="color:#df9a44;font-weight:700">■</span> Unresolved. <b>None are confirmed construction.</b></div>
 <p class="meta" style="margin-top:15px">Drag the separator to compare. Highlighted regions represent <b>spectral change candidates</b>, not confirmed construction.</p>
 </section>
 <aside class="panel">
-<h2>Observation summary</h2>
+<h2>Multispectral screening · v0.4</h2>
+<div class="status" id="v04Status">Awaiting additional SWIR and 2026 spring observations…</div>
+<div class="metric"><small>Persistent exposed-surface hypotheses</small><strong id="v04persistent">—</strong><small>Could still be agricultural land; not verified construction</small></div>
+<div class="metric"><small>Likely seasonal cropland regrowth</small><strong id="v04seasonal">—</strong><small>Historical cropland context + vegetation returned</small></div>
+<div class="metric"><small>Unresolved changes</small><strong id="v04uncertain">—</strong><small>Require interpretation against labeled examples</small></div>
+<div class="metric"><small>Valid pixels across all four observations</small><strong id="v04valid">—</strong><small>Within mapped corridor; no model confidence claimed</small></div>
+<h2 style="margin-top:25px">Legacy vegetation screening</h2>
 <div class="metric"><small>Candidate surface changes</small><strong id="hectares">—</strong><small>Hectares · requires ground verification</small></div>
 <div class="metric"><small>Changes inside mapped A0 corridor (±130 m)</small><strong id="roadchanges">—</strong><small>Not verified construction · 2 km study area only</small></div>
 <div class="metric"><small>Mapped corridor study coverage</small><strong id="corridorarea">—</strong></div>
@@ -65,8 +71,8 @@
 let result, mode='rgb', position=50;
 const el=id=>document.getElementById(id);
 function setPosition(x){position=Math.max(0,Math.min(100,x));el('post').style.clipPath='inset(0 0 0 '+position+'%)';el('cut').style.left=position+'%';el('handle').style.left=position+'%'}
-function layer(next){mode=next;el('post').src=next==='changes'?'candidates.png':next==='interpret'?'interpreted.png':next==='corridor'?'corridor_preview.png':'after.png';for(const b of ['rgb','changes','interpret','corridor'])el(b).classList.toggle('active',b===next)}
-el('rgb').onclick=()=>layer('rgb');el('changes').onclick=()=>layer('changes');el('interpret').onclick=()=>layer('interpret');el('corridor').onclick=()=>layer('corridor');
+function layer(next){mode=next;el('post').src=next==='changes'?'candidates.png':next==='interpret'?'interpreted.png':next==='corridor'?'corridor_preview.png':next==='spectralBtn'?'spectral_preview.png':'after.png';for(const b of ['rgb','changes','interpret','corridor','spectralBtn'])el(b).classList.toggle('active',b===next)}
+el('rgb').onclick=()=>layer('rgb');el('changes').onclick=()=>layer('changes');el('interpret').onclick=()=>layer('interpret');el('corridor').onclick=()=>layer('corridor');el('spectralBtn').onclick=()=>layer('spectralBtn');
 let dragging=false;
 el('viewport').addEventListener('pointerdown',e=>{if(!result)return;dragging=true;el('viewport').setPointerCapture(e.pointerId);move(e)});
 el('viewport').addEventListener('pointermove',e=>{if(dragging)move(e)});
@@ -86,6 +92,18 @@ el('empty').hidden=true;
 for(const id of ['pre','post','cut','handle'])el(id).hidden=false;
 el('pre').src='before.png';el('post').src='after.png';setPosition(50);
 el('rgb').disabled=false;el('changes').disabled=false;el('interpret').disabled=!result.interpretation;el('corridor').disabled=result.corridor?.status!=='mapped_osm';
+const v=result.v04;
+if(v?.status==='ready'){
+  el('v04Status').textContent='4 real satellite observations · NDVI + BSI + NDBI · experimental rules (NOT a trained construction AI)';
+  el('v04persistent').textContent=v.persistent_bare_candidate_ha+' ha';
+  el('v04seasonal').textContent=v.likely_seasonal_cropland_ha+' ha';
+  el('v04uncertain').textContent=v.unresolved_change_ha+' ha';
+  el('v04valid').textContent=v.corridor_valid_percent+'%';
+  el('spectralBtn').disabled=false;
+}else{
+  el('v04Status').classList.add('warn');
+  el('v04Status').textContent='MULTISPECTRAL ANALYSIS UNAVAILABLE — '+(v?.reason||'No verified SWIR observations');
+}
 el('date0').textContent='◂ '+result.before.date;el('date1').textContent=result.after.date+' ▸';
 el('hectares').textContent=result.candidate_hectares.toLocaleString('en-US')+' ha';
 el('roadchanges').textContent=result.corridor?.status==='mapped_osm'?result.corridor.candidate_hectares+' ha':'Unavailable';
@@ -105,42 +123,60 @@ el('evidence').innerHTML='<b>Before scene:</b> '+escapeHtml(result.before.id)+'<
 
 async function renderMap(data){
  if(typeof L==='undefined'){el('mapStatus').textContent='Map library unavailable';return}
- const map=L.map('map',{scrollWheelZoom:false,preferCanvas:true}).setView([data.site.lat,data.site.lon],13);
- L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
  const bounds=data.site.bounds;
- const study=L.rectangle(bounds,{weight:2,color:'#f0b45b',fill:false,dashArray:'7 5'}).addTo(map);
- study.bindPopup('Research AOI 2 × 2 km · NOT entire Lot 3');
- let overlay=L.imageOverlay('corridor_changes.png',bounds,{opacity:.85,interactive:false});
- let routeLoaded=false;
+ const map=L.map('map',{scrollWheelZoom:false,preferCanvas:true,zoomControl:true});
+ const streets=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+   maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+ }).addTo(map);
+ const beforeImg=L.imageOverlay('before.png',bounds,{opacity:1,interactive:false});
+ const afterImg=L.imageOverlay('after.png',bounds,{opacity:1,interactive:false}).addTo(map);
+ // For this alpha, a projected UTM raster is approximately shown as a geographic rectangle.
+ const track=L.rectangle(bounds,{weight:2,color:'#ffbd62',fill:false,dashArray:'7 5'}).addTo(map);
+ track.bindPopup('Research AOI 2 km × 2 km. NOT the whole motorway lot.');
+ const spectralReady=data.v04?.status==='ready';
+ const evidence=L.imageOverlay(spectralReady?'spectral_candidates.png':'corridor_changes.png',
+    bounds,{opacity:0.8,interactive:false});
+ let road=null;
  let geo={features:[]};
  try{
-    const response=await fetch('corridor.geojson',{cache:'no-store'});
-    if(!response.ok)throw Error('OSM geometry unavailable');
-    geo=await response.json();
-    if(geo.features?.length){
-      const route=L.geoJSON(geo,{style:{color:'#46e4c3',weight:5,opacity:.95},
-        onEachFeature:(feature,layer)=>layer.bindPopup('Mapped A0 Lot 3 · OSM way '+feature.properties?.osm_way_id+' · NOT an official survey')}).addTo(map);
-      const rb=route.getBounds();
-      if(rb.isValid())map.fitBounds(rb.pad(.12),{maxZoom:14});
-      routeLoaded=true;
-    }else map.fitBounds(study.getBounds());
- }catch(err){map.fitBounds(study.getBounds());console.warn(err)}
- el('mapStatus').textContent=routeLoaded?(geo.features.length+' OSM way(s) · research geometry, not official alignment'):'Mapped geometry unavailable';
- const toggle=L.control({position:'topright'});
- toggle.onAdd=function(){
+   const response=await fetch('corridor.geojson',{cache:'no-store'});
+   if(!response.ok)throw Error('OSM geometry missing');
+   geo=await response.json();
+   if(geo.features?.length){
+     road=L.geoJSON(geo,{style:{color:'#00ddbb',weight:3,opacity:.96},
+       onEachFeature:(feature,layer)=>layer.bindPopup('Mapped A0 Lot 3 · OSM way '+feature.properties?.osm_way_id+' · NOT an official survey')}).addTo(map);
+   }
+ }catch(e){console.warn('OSM geometry is unavailable',e)}
+ // Critical: open on the investigated imagery, not 7km of unrelated land.
+ map.fitBounds(bounds,{padding:[25,25],maxZoom:14});
+ el('mapStatus').textContent=road?
+    (geo.features.length+' mapped OSM ways · 2 km AOI selected'):
+    'No OSM motorway geometry available';
+ const panel=L.control({position:'topright'});
+ panel.onAdd=()=>{
    const div=L.DomUtil.create('div','leaflet-bar');
-   div.style='background:#11242d;color:#ddf5ff;padding:7px 10px;border-radius:7px;box-shadow:0 1px 12px #0006;font:12px system-ui';
-   div.innerHTML='<label><input type="checkbox" id="mapChanges" '+(routeLoaded?'':'disabled')+'> Candidate changes</label>';
+   div.style='padding:10px 12px;background:#0d1f29;color:#edfaff;border-radius:8px;box-shadow:0 3px 20px #0008;font:12px/1.65 system-ui;min-width:160px';
+   div.innerHTML='<label for="mapImagery">Background</label><select id="mapImagery" style="display:block;width:100%;background:#213642;color:#fff;border:1px solid #486071;border-radius:5px;padding:5px"><option value="2025">Sentinel · Aug 2025</option><option value="2023">Sentinel · Aug 2023</option><option value="streets">Street map</option></select><label style="display:block;margin-top:7px"><input id="mapEvidence" type="checkbox"> '+(spectralReady?'v0.4 spectral hypotheses':'Legacy vegetation candidates')+'</label><small style="color:#a9c4d0">10 m native pixels<br/>No construction certainty</small>';
    L.DomEvent.disableClickPropagation(div);
-   div.querySelector('input').addEventListener('change',event=>{
-     if(event.target.checked)overlay.addTo(map);
-     else if(map.hasLayer(overlay))map.removeLayer(overlay);
+   L.DomEvent.disableScrollPropagation(div);
+   const sel=div.querySelector('#mapImagery'),box=div.querySelector('#mapEvidence');
+   sel.addEventListener('change',()=>{
+     if(map.hasLayer(beforeImg))map.removeLayer(beforeImg);
+     if(map.hasLayer(afterImg))map.removeLayer(afterImg);
+     if(sel.value==='2023')beforeImg.addTo(map);
+     if(sel.value==='2025')afterImg.addTo(map);
+     track.bringToFront();
+     if(map.hasLayer(evidence))evidence.bringToFront();
+     if(road)road.bringToFront();
+   });
+   box.addEventListener('change',()=>{
+     if(box.checked){evidence.addTo(map);if(road)road.bringToFront()}
+     else if(map.hasLayer(evidence))map.removeLayer(evidence);
    });
    return div;
  };
- toggle.addTo(map);
- setTimeout(()=>map.invalidateSize(),200);
+ panel.addTo(map);
+ setTimeout(()=>map.invalidateSize(),100);
 }
 function renderTimeline(series){
  const rows=series.filter(x=>Number.isFinite(x.corridor_ndvi));
