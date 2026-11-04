@@ -1,0 +1,48 @@
+name: InfraTrack — real Sentinel-2 to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: infratrack-deploy
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run deterministic tests
+        run: python -m unittest discover -s tests -v
+      - name: Download and analyze real Sentinel-2
+        shell: bash
+        run: |
+          set +e
+          python infratrack.py --lat 44.5128 --lon 26.2795 --size-km 2 --before 2023-06-01/2023-08-31 --after 2025-06-01/2025-08-31 --max-cloud 35 --output site
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::Satellite imagery was not available; publishing explicit no-data state"
+            python scripts/failure_page.py
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
