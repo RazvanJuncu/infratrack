@@ -26,7 +26,7 @@ def parse_issue(event):
     return json.loads(match.group(1)),issue,author
 
 def validate(data,issue,author):
-    required=("study_id","signature","row","col","label","site_group",
+    required=("study_id","signature","row","col","label","site_group","question_version",
               "evidence_url","evidence_date","note","attestation")
     if any(k not in data for k in required):
         raise ValueError("Missing required annotation fields")
@@ -46,6 +46,8 @@ def validate(data,issue,author):
         raise ValueError("Pixel coordinates must be integers")
     if not (0<=data["row"]<200 and 0<=data["col"]<200):
         raise ValueError("Outside the experimental 200x200 image")
+    if data["question_version"] != "change-types-v2":
+        raise ValueError("Legacy land-type interpretations cannot be promoted into change-type training labels")
     if data["label"] not in ALLOWED:
         raise ValueError("Unknown annotation class")
     if not re.fullmatch(r"[a-zA-Z0-9_-]{4,64}",str(data["site_group"])):
@@ -70,6 +72,7 @@ def validate(data,issue,author):
         "issue_url":str(issue.get("html_url","")),
         "study_id":data["study_id"],"signature":data["signature"],
         "row":data["row"],"col":data["col"],"label":data["label"],
+        "question_version":data["question_version"],
         "site_group":data["site_group"],
         "evidence_url":url,"evidence_date":day.isoformat(),
         "note":note,"reviewed_by":author,
