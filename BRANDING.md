@@ -1,59 +1,54 @@
-# Quiet Precision · InfraTrack brand exploration
+# InfraTrack — Carbon / Sand
 
-**Stage:** Design system implemented. **Product name not decided.**
-**Candidate preview:** https://razvanjuncu.github.io/infratrack/brand-lab.html
-**Live software:** https://razvanjuncu.github.io/infratrack/
+**Decision:** Carbon / Sand selected as the production interface palette on 2026-11-04.
+**Application:** https://razvanjuncu.github.io/infratrack/
+**Repository:** https://github.com/RazvanJuncu/infratrack
 
-## Positioning
+## Design intent
 
-Earth observation for the places that matter. A minimalist workspace to inspect real satellite observations, compare changes through time, and keep raw evidence visible. The brand must remain credible when the AI system has no answer; the visual identity must not imply independently verified construction changes where only raw RGB differences exist.
+InfraTrack is an evidence-led, geospatial observation workspace. Real satellite imagery is the protagonist: surrounding controls should be quiet, compact and honest about data limitations. Avoid the stacked-card, neon-accent, gradient-heavy aesthetic of generic AI dashboards.
 
-Short line: **See what changes. Where it matters.**
+### Palette
 
-Voice: precise, warm, calm; use active words, clear sources and dates. Never use exaggerated AI accuracy claims, invented geographic data, or glossy synthetic satellite imagery. The images are the product's visual protagonist.
-
-## Naming directions under review
-
-1. **Wherewhile** — where + while; playful link of geography and time; not immediately descriptive. Candidate favored for visual exploration, *not legally cleared*.
-2. **Terrafter** — terra + thereafter; compact coinage. Search results are not a trademark or domain search.
-3. **PlotShift** — plot of land + change/plot twist. Existing commercial uses identified; not advised for launch without legal clearance.
-4. **InfraTrack** — current name retained throughout the software until explicitly approved replacement. Original repository paths, Pages URLs, saved local browser review keys and project IDs are not renamed.
-
-Prior concept **Earthwhile** has at least one existing floral/plant brand; not a cleared candidate.
-
-All candidates require dedicated trademark and domain checks in relevant jurisdictions before production adoption.
-
-## Design system
-
-Single CSS source of truth: \`site/brand.css\` (loaded after existing page-specific layouts, leaving interaction logic intact). Source-controlled SVG observation frame mark: \`site/mark.svg\` (two offset squares and a scan/compare line). Brand preview: \`site/brand-lab.html\` (names switch only in the preview, no production storage/renaming).
-
-| Token | HEX | Use |
+| Token | HEX | Role |
 |---|---|---|
-| Midnight | \`#0C131B\` | Page background |
-| Slate | \`#17232D\` | Panels |
-| Mineral | \`#34434E\` | Dividers/borders |
-| Frost | \`#EEF3F1\` | Main text |
-| Sage Mint | \`#A3E4D1\` | CTA, selection, link focus |
-| Amber | \`#DFB97E\` | Cloud and evidence-quality warnings |
-| Coral | \`#F18E77\` | Raw difference and risk state |
+| Carbon | `#15191C` | App background |
+| Graphite | `#1B1F22` | Navigation |
+| Panel | `#24292D` | Large workspace surfaces |
+| Elevated | `#2B3034` | Secondary control fill |
+| Border | `#383E41` | Fine structural separators |
+| Ivory | `#E8E9E5` | Primary text and imagery controls |
+| Muted | `#A5AAA8` | Metadata and secondary copy |
+| Sand | `#D49A58` | Single interaction/selection accent |
+| Change red | `#D75C56` | Experimental visual differences and risk signals |
 
-## Typography
+Sand is **not** used to depict image differences. Cloud/quality warnings may use warm sand, while actual highlighted raw pixel differences retain a separate red color and an explicit experimental label/caveat.
 
-- **Geist Sans**: product UI and display titles, regular 400, medium 500, semibold 600; heavy bold used sparingly.
-- **Geist Mono**: dates, coordinates, scene IDs, provenance and technical metadata.
-- Font source: https://vercel.com/font (official project under OFL); Google Fonts CDN used in CSS with system fallbacks. Neither font binaries nor raster-generated mock satellite imagery are committed to brand assets.
+## Shape and spacing
 
-## UI rules
+- Large windows, data panes, preview surfaces, and dialogs: **90° corners (0 px radius)**.
+- Small actions, filters, links, tab navigation and selects: **capsule/pill geometry**.
+- Flat watchlist/timeline rows, with small separators rather than individually boxed cards.
+- No gradients, unnecessary glow, or decorative shadow stacks.
+- Keep satellite canvas prominent. Never substitute generated satellite art for genuine source imagery.
+- Keep functional descriptions concise. Do not conceal uncertainty or data provenance.
+- Icons are monochrome line SVG assets embedded as CSS masks for primary navigation and major actions. Visible labels remain for usability and accessibility.
 
-- Satellite imagery is the hero. Keep chrome and gradients subdued.
-- Avoid decorative map/space icon clichés, fake AI confidence bars, thick neon strokes, and heavy cards.
-- One accent for actionable selection; warm amber for cloud limitations and warnings.
-- Use restrained corner radii (9–13 px), high-contrast readable secondary text, subtle borders rather than strong shadows.
-- Preserve keyboard focus and the native UI semantics of drag/drop, selects, buttons and links.
-- Current main navigation remains Monitor / Training / Technical. No extra permanent branding tab.
-- Logo must work at 24–32 px and be recognisable in monochrome.
-- Prioritize accurate technical communication: visual differences, cloud contamination, temporal consistency and co-registration limitations must remain explicit.
+## Type
 
-## Implementation status
+- **Geist Sans:** primary product UI (400–600).
+- **Geist Mono:** dates, scene IDs, coordinates, technical readouts.
+- Do not use large bold marketing headlines in analysis views.
 
-The shared styles are applied to Monitor, Training, and Technical; archived research pages are left unchanged. The brand experiment page uses illustrative text and shapes, not real or fake observation statistics. No paid AI dependency, custom API key or workspace data migration was added. The name and URL remain InfraTrack until selected.
+## Engineering invariants
+
+- Shared production design system is `site/brand.css`; loaded last on Monitor, Training and Technical pages.
+- `site/mark.svg` is the compact, square-corner observation-frame mark.
+- The existing IDs, JS hooks, local storage keys, observation sources, and alignment/difference computations must remain intact.
+- Preserve keyboard focus, input labels, dynamic status announcements, drag-and-drop, and screen-reader semantics.
+- Brand lab and legacy archived pages are historical explorations; live product is InfraTrack.
+- InfraTrack currently presents real imagery and experimental differences, **not** a verified AI construction detection system.
+
+## Superseded exploration
+
+The prior Quiet Precision / Sage Mint exploration is superseded by Carbon / Sand. The previous naming candidates (Wherewhile, Terrafter, PlotShift) remain research concepts, not product renames or cleared marks.
