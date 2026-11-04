@@ -101,7 +101,7 @@ def metadata(site,output,status,**details):
             "status":status,"source":"Copernicus Sentinel-2 L2A via Element84 Earth Search",
             "analysis_extent_km":site.get("size_km",2),
             "automatic_construction_detection":False,
-            "warning":"Spectral change only; may be crops, lighting, water, earthworks or other changes. Human/evidence validation required.",
+            "warning":"Spectral changes are NOT verified construction or land-use labels; may reflect crops, lighting, water, earthworks or other causes. Independent human/evidence validation required.",
             **details}
 
 def run_site(site, output, now=None):
