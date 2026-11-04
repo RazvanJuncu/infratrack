@@ -79,13 +79,19 @@ function clipValue(percent){
  const fraction=Math.max(0,Math.min(100,Number(percent)||0));
  return "inset(0 "+(100-fraction)+"% 0 0)";
 }
-const core={STORE,allowed,bounds,validCustom,readSaved,dateBounds,searchBody,parseScenes,toggleSceneIds,orderedScenes,clipValue};
+// Rendered cards are replaced after every selection. Checking event.detail alone
+// cannot prevent double-click deselection because the second click may target a
+// newly created DOM node. Track the ID and actual click time across renders.
+function rapidRepeat(last,id,now,delay=550){
+ return Boolean(last&&last.id===id&&now-last.at>=0&&now-last.at<delay);
+}
+const core={STORE,allowed,bounds,validCustom,readSaved,dateBounds,searchBody,parseScenes,toggleSceneIds,orderedScenes,clipValue,rapidRepeat};
 if(typeof module==="object"&&module.exports)module.exports=core;
 if(!global.document)return;
 const $=id=>document.getElementById(id);
 let sites=[],customs=[],selected=null,selection=null,map=null,pin=null,rect=null;
 let fetchId=0,manifest=null,activePreview=null;
-let catalogScenes=[],catalogById=new Map(),chosenSceneIds=[],compareMode="overlay";
+let catalogScenes=[],catalogById=new Map(),chosenSceneIds=[],compareMode="overlay",lastSceneTap=null;
 const previewCache=new Map();
 function say(s){$("monitorStatus").textContent=s;}
 function save(){
@@ -175,7 +181,7 @@ async function refreshPublished(site,request){
 async function choose(site){
  if(activePreview)activePreview.aborted=true;
  activePreview=null;
- chosenSceneIds=[];
+ chosenSceneIds=[];lastSceneTap=null;
  catalogScenes=[];catalogById=new Map();previewCache.clear();
  $("singleScene").hidden=true;$("overlay").hidden=true;
  $("pair").hidden=true;$("selectedTools").hidden=true;
@@ -258,7 +264,7 @@ function renderSceneCards(){
    button.type="button";
    const src=catalogById.get(scene.id);
    const hasVisual=Boolean(src?.assets?.visual?.href?.startsWith("https://"));
-   button.disabled=!hasVisual;
+   button.disabled=false;
    button.setAttribute("aria-pressed",String(chosenSceneIds.includes(scene.id)));
    button.setAttribute("aria-label",scene.date+" · "+(scene.cloud_percent===null?
      "unknown scene cloud cover":scene.cloud_percent+"% whole-scene cloud cover")+
@@ -269,7 +275,7 @@ function renderSceneCards(){
       scene.cloud_percent+"% cloud cover (whole scene, not this area)"));
    const label=sceneRole(scene);
    if(label)button.append(makeElement("span",label+" · click to deselect","selection-role"));
-   else if(!hasVisual)button.append(makeElement("span","Original visual image unavailable","selection-role"));
+   else if(!hasVisual)button.append(makeElement("span","No RGB asset · click for details","selection-role"));
    button.onclick=()=>selectSceneId(scene.id);
    root.append(button);
  }
@@ -283,8 +289,16 @@ function renderSceneCards(){
 }
 function selectSceneId(id){
  if(!catalogById.has(id))return;
+ const now=Date.now();
+ if(rapidRepeat(lastSceneTap,id,now))return;
+ lastSceneTap={id,at:now};
  const item=catalogById.get(id);
- if(!item?.assets?.visual?.href?.startsWith("https://"))return;
+ if(!item?.assets?.visual?.href?.startsWith("https://")){
+   $("selectedStatus").textContent=item?.properties?.datetime?.slice(0,10)+
+     ": this catalog observation has no accessible original RGB scene asset; choose another date.";
+   say("This source record has no usable RGB image. The selected dates were not changed.");
+   return;
+ }
  chosenSceneIds=toggleSceneIds(chosenSceneIds,id);
  renderSceneCards();
  if(!chosenSceneIds.length){resetSelectedView();return;}
@@ -307,6 +321,9 @@ async function renderExactScenes(){
  $("overlay").hidden=true;
  $("pair").hidden=true;
  $("recentSummary").textContent="Loading the selected original Sentinel-2 pixels…";
+ $("selectedStatus").textContent=(chosenSceneIds.length===1?
+   "Selected date":"Two selected dates")+
+   " · retrieving exact RGB imagery…";
  $("imageNote").textContent="Displaying only the exact acquisition(s) you selected; there is no substitute date.";
  $("chosenDates").textContent=orderedScenes(sceneItems.map(x=>({date:x.properties.datetime.slice(0,10)})))
     .map(x=>x.date).join(" → ");
@@ -319,8 +336,10 @@ async function renderExactScenes(){
    const result=await global.InfraCustomPreview.renderSelected(currentArea,sceneItems,{
      signal:token,cache:previewCache,
      onProgress:message=>{
-       if(!token.aborted&&selected?.id===currentArea.id)
+       if(!token.aborted&&selected?.id===currentArea.id){
          $("recentSummary").textContent=message;
+         $("selectedStatus").textContent=message;
+       }
      }
    });
    if(token.aborted||selected?.id!==currentArea.id)return;
@@ -350,6 +369,9 @@ async function renderExactScenes(){
    }
    $("imageNote").textContent=result.note+
      " Both images cover the same geographical square; changes and cloud artifacts require interpretation.";
+   $("selectedStatus").textContent=result.count===1?
+     "Image loaded · "+before.date+" · choose another date to compare":
+     "Comparison ready · "+before.date+" → "+after.date+" · drag the overlay slider above";
    say("Selected Sentinel images loaded. No automatic interpretation or fabricated observation.");
    if(result.count===2)$("comparisonSection").scrollIntoView({behavior:"smooth",block:"start"});
  }catch(err){
@@ -359,6 +381,8 @@ async function renderExactScenes(){
    $("recentSummary").textContent="Could not display the selected observation(s).";
    $("imageNote").textContent=err.message+
       " The original selection remains highlighted; no alternative dates were used.";
+   $("selectedStatus").textContent="Image unavailable · "+err.message+
+      " · selected date(s) preserved";
    say("A selected image could not be rendered. See the precise error under Recent satellite comparison.");
  }
 }
