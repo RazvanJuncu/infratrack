@@ -117,3 +117,9 @@ Open the [live InfraTrack site](https://razvanjuncu.github.io/infratrack/) and u
 **Important:** There is no automatic trust promotion. Machine learning only uses the separate \`labels/reviewed.jsonl\` file, populated through the evidence-gated workflow. Even those owner-attested sources are not independently audited. The site still does not claim a working/validated construction detector until sufficiently independent ground-truth samples and held-out evaluation are available.
 
 The four-button logic has no paid services and runs entirely in static JavaScript. Both Python tests and Node built-in tests run on GitHub Actions.
+
+## Training question revision: change-types-v2 (2026-11-04)
+
+The simple Training screen now asks **"What changed between BEFORE and AFTER?"**, not "What sort of land is this?". The choices are *Construction change*, *Agricultural change*, *No significant change*, and *Can't tell*. Farmland may be unchanged when both images show essentially the same field; agricultural change requires visible crop/harvest/ploughing change rather than mere agricultural land use.
+
+Because earlier review rounds were collected under an ambiguous land-use/change question, those v1 drafts are **preserved in their original browser localStorage namespace**, but **never interpreted as v2 change classifications**. New entries use the separate `infratrack:quick-review:v2:change-types:` namespace and export with `question_version: "change-types-v2"`. Previous exported JSON files remain historical exploratory responses; no automatic conversion or model training from them. The source-verified issue intake and model-training gate also reject labels that lack the revised explicit question version. Resubmission under the revised question and independent dated evidence is necessary for training.
