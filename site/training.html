@@ -47,7 +47,7 @@ a{color:#82e0cb}footer{font-size:12px;color:#91a6b3}
 <div class="tabs"><a href="./">Explore</a><a class="active" aria-current="page" href="training.html">Training</a><a href="technical.html">Technical</a></div></nav>
 <main>
  <h1>Training</h1>
- <p class="sub">Review satellite examples with one click. Construction, agriculture, unchanged or unsure. Keep it simple — expert verification is optional and separate.</p>
+ <p class="sub">Look at the same location in the BEFORE and AFTER images. **Classify what changed**, not what kind of land it is. Dated evidence is only needed for verified AI training.</p>
  <section class="panel" id="quickReview">
  <div class="topline">
    <label class="select-label" for="regionSelect">Area to review
@@ -66,16 +66,17 @@ a{color:#82e0cb}footer{font-size:12px;color:#91a6b3}
    <p class="note" id="quickImageWarning">Original Sentinel-2 data. Each native pixel represents roughly 10 m on the ground, so small objects cannot be identified reliably.</p>
   </div>
   <div>
-   <div class="tag">How would you classify this?</div>
+   <div class="tag">What changed between BEFORE and AFTER?</div>
    <h3 id="quickCandidateName">Loading satellite examples…</h3>
    <div id="quickCandidateDetail"></div>
    <div id="candidateLocation" class="note"></div>
    <div class="choices">
-    <button id="quickConstruction" type="button">🏗️ Construction</button>
-    <button id="quickAgriculture" type="button">🌾 Agriculture</button>
-    <button id="quickUnchanged" type="button">◻ Unchanged</button>
-    <button id="quickUnsure" type="button">? Unsure</button>
+    <button id="quickConstruction" type="button">🏗️ Construction change</button>
+    <button id="quickAgriculture" type="button">🌾 Agricultural change</button>
+    <button id="quickUnchanged" type="button">◻ No significant change</button>
+    <button id="quickUnsure" type="button">? Can’t tell</button>
    </div>
+   <p class="note" style="margin:10px 0">A field can be <strong>unchanged</strong> if it looks similar in both images. Choose agricultural change only for visible crop/harvest/ploughing changes.</p>
    <div id="quickDraftState">No selection yet</div>
    <div class="small-actions">
      <button id="quickPrev" type="button">← Previous</button>
@@ -91,10 +92,10 @@ a{color:#82e0cb}footer{font-size:12px;color:#91a6b3}
  </section>
  <section class="evidence" id="evidencePanel" hidden>
   <h2>Verify an example</h2>
-  <p class="note">Quick impressions are not trustworthy ground truth. Only source-backed examples may be considered for model training. You can skip this section entirely while reviewing.</p>
+  <p class="note">Verify the type of change (not merely the existing land use) using independent, dated evidence. Quick impressions alone are not training ground truth.</p>
   <p id="verifySelected" class="note"></p>
   <label>Class
-  <select id="labelClass"><option value="construction">Construction</option><option value="agriculture">Agriculture</option><option value="unchanged">Unchanged</option></select></label>
+  <select id="labelClass"><option value="construction">Construction change</option><option value="agriculture">Agricultural change</option><option value="unchanged">No significant change</option></select></label>
   <label>Site group (same physical site = same ID)
   <input id="labelSite" maxlength="64" placeholder="e.g. a7_section_01"></label>
   <label>Independent dated evidence URL
@@ -107,7 +108,7 @@ a{color:#82e0cb}footer{font-size:12px;color:#91a6b3}
   <button id="submitLabel" type="button">Open verified-label GitHub Issue</button>
   <p id="labelMessage">Submitting the issue on GitHub is a separate, manual confirmation step.</p>
  </section>
- <footer>Provisional clicks never train a model. Examples are real Sentinel-2 imagery; verified-label quality still requires review. Your quick choices stay in your browser; Export creates a backup.</footer>
+ <footer>New change-focused reviews are stored separately. Older rounds remain in browser storage and are not reinterpreted as change labels. Provisional clicks never train a model. Export creates a backup.</footer>
 </main>
 <script src="quick_label.js"></script>
 <script src="training_app.js"></script>
