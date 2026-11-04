@@ -30,8 +30,16 @@ def validate(data,issue,author):
               "evidence_url","evidence_date","note","attestation")
     if any(k not in data for k in required):
         raise ValueError("Missing required annotation fields")
-    if data["study_id"]!="a0-nord3-2km-v05":
-        raise ValueError("Unexpected study identifier")
+    registry=Path("projects/regions.json")
+    site_ids={"a0-nord3-2km-v05"}  # Legacy first AOI
+    if registry.exists():
+        configuration=json.loads(registry.read_text(encoding="utf-8"))
+        for site in configuration.get("sites",[]):
+            if site.get("use_anchor"):
+                continue
+            site_ids.add(site["id"]+"-2km-v1")
+    if data["study_id"] not in site_ids:
+        raise ValueError("Unexpected or unregistered study identifier")
     if not re.fullmatch(r"[a-f0-9]{16}",str(data["signature"])):
         raise ValueError("Invalid scene signature")
     if type(data["row"]) is not int or type(data["col"]) is not int:
