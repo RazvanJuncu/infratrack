@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InfraTrack · Training</title>
+<style>
+:root{color-scheme:dark;--bg:#0d151c;--surface:#15212a;--border:#2d3d49;--text:#ecf4f7;--muted:#9aadb9;--teal:#4acbb5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,Segoe UI,sans-serif}
+nav{background:#111d26;border-bottom:1px solid var(--border);min-height:70px;display:flex;align-items:center;gap:26px;padding:12px max(22px,calc((100vw - 1150px)/2))}
+.brand{font-weight:850;font-size:22px;letter-spacing:-1px;text-decoration:none;color:white}.brand span{color:var(--teal)}
+.tabs{margin-left:auto;display:flex;gap:8px}.tabs a{padding:8px 14px;border-radius:9px;color:var(--muted);font-weight:650;text-decoration:none}.tabs a.active{color:#fff;background:#243940}
+main{max-width:1150px;margin:auto;padding:30px 22px 65px}
+h1{font-size:clamp(28px,3.3vw,38px);letter-spacing:-1px;margin:0 0 6px}h2{font-size:20px;margin:0 0 14px}
+.sub{color:var(--muted);max-width:740px;margin:0 0 25px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:19px}
+.topline{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.select-label{color:var(--muted);font-weight:600;font-size:13px}
+select,input,textarea{background:#1d303c;border:1px solid #415462;color:#f5ffff;border-radius:8px;padding:10px 12px;font:14px system-ui}
+select{width:min(100%,460px);margin-top:6px;display:block}
+.progress{height:7px;overflow:hidden;border-radius:10px;background:#304550;margin-top:14px}.progress div{height:100%;width:0;background:#52cfb9;transition:width .2s}
+.review-grid{display:grid;grid-template-columns:1.16fr 1fr;gap:27px;margin-top:16px}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photo{background:#101d25;border-radius:10px;padding:10px;min-width:0}
+.photo small{display:block;color:#a2bdc6;font-size:11px;padding-bottom:8px}
+.photo canvas{width:100%;display:block;aspect-ratio:1;image-rendering:pixelated;background:#10222d;border-radius:7px}
+.note{font-size:12px;color:var(--muted);margin:11px 0 0}
+.tag{font-size:11px;color:#62d7c1;text-transform:uppercase;letter-spacing:1px;font-weight:750}
+h3{font-size:19px;margin:4px 0 6px}.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 7px}
+button{cursor:pointer;color:var(--text);border-radius:8px;border:1px solid #425766;background:#1f3440;padding:11px 12px;font-weight:700;font-size:14px}
+button:hover{border-color:#81b2a6}button.chosen{background:#1d6157;border-color:#59ddc1}
+button:disabled{opacity:.45;cursor:default}.choices button{min-height:58px;font-size:15px}
+.small-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}.small-actions button{font-size:12px;padding:9px 11px}
+#quickReviewStatus{background:#1c3238;color:#c7e1e1;padding:10px 12px;border-radius:9px;margin-top:14px;font-size:13px}
+#quickPersistence,#quickDraftState,#quickCandidateDetail{color:var(--muted);font-size:12px}
+.evidence{margin-top:20px;border:1px solid #345e54;border-radius:12px;padding:20px;background:#152b2c}
+.evidence label{display:block;margin:12px 0;color:#bcd2db;font-size:13px}.evidence label input,.evidence label textarea{width:100%;margin-top:5px}
+.evidence label input[type=checkbox]{width:auto;margin:0 6px 0 0}
+.evidence textarea{min-height:75px;resize:vertical}
+.evidence button{background:#235f52;border-color:#4ba78d}
+#labelMessage{font-size:12px;color:#b5d4d6;margin-top:12px}
+a{color:#82e0cb}footer{font-size:12px;color:#91a6b3}
+@media(max-width:760px){nav{gap:8px;padding:11px 14px}.tabs{gap:2px}.tabs a{padding:7px 9px;font-size:13px}main{padding:22px 13px}.review-grid{grid-template-columns:1fr}.panel{padding:13px}.choices button{min-height:54px}.photo{padding:6px}}
+</style>
+</head>
+<body>
+<nav><a class="brand" href="./">Infra<span>Track</span></a>
+<div class="tabs"><a href="./">Explore</a><a class="active" aria-current="page" href="training.html">Training</a><a href="technical.html">Technical</a></div></nav>
+<main>
+ <h1>Training</h1>
+ <p class="sub">Look at the same location in the BEFORE and AFTER images. **Classify what changed**, not what kind of land it is. Dated evidence is only needed for verified AI training.</p>
+ <section class="panel" id="quickReview">
+ <div class="topline">
+   <label class="select-label" for="regionSelect">Area to review
+   <select id="regionSelect"><option value="">Loading real satellite areas…</option></select></label>
+   <span id="quickProgress">—</span>
+ </div>
+ <div class="progress"><div id="quickProgressBar"></div></div>
+ <div class="review-grid">
+  <div>
+   <div class="photos">
+    <div class="photo"><small>BEFORE · <span id="quickBeforeDate">—</span></small>
+      <canvas id="quickBefore" width="260" height="260" aria-label="Real Sentinel-2 2023 before scene"></canvas></div>
+    <div class="photo"><small>AFTER · <span id="quickAfterDate">—</span></small>
+      <canvas id="quickAfter" width="260" height="260" aria-label="Real Sentinel-2 2025 after scene"></canvas></div>
+   </div>
+   <p class="note" id="quickImageWarning">Original Sentinel-2 data. Each native pixel represents roughly 10 m on the ground, so small objects cannot be identified reliably.</p>
+  </div>
+  <div>
+   <div class="tag">What changed between BEFORE and AFTER?</div>
+   <h3 id="quickCandidateName">Loading satellite examples…</h3>
+   <div id="quickCandidateDetail"></div>
+   <div id="candidateLocation" class="note"></div>
+   <div class="choices">
+    <button id="quickConstruction" type="button">🏗️ Construction change</button>
+    <button id="quickAgriculture" type="button">🌾 Agricultural change</button>
+    <button id="quickUnchanged" type="button">◻ No significant change</button>
+    <button id="quickUnsure" type="button">? Can’t tell</button>
+   </div>
+   <p class="note" style="margin:10px 0">A field can be <strong>unchanged</strong> if it looks similar in both images. Choose agricultural change only for visible crop/harvest/ploughing changes.</p>
+   <div id="quickDraftState">No selection yet</div>
+   <div class="small-actions">
+     <button id="quickPrev" type="button">← Previous</button>
+     <button id="quickNext" type="button">Next →</button>
+     <button id="quickUndo" type="button">Undo</button>
+     <button id="quickExport" type="button">Export</button>
+   </div>
+   <button id="quickVerify" type="button" style="margin-top:15px">Verify this example for AI training</button>
+   <div id="quickReviewStatus" role="status">Select an example to begin.</div>
+   <p class="note" id="quickPersistence">Saved locally on this browser only.</p>
+  </div>
+ </div>
+ </section>
+ <section class="evidence" id="evidencePanel" hidden>
+  <h2>Verify an example</h2>
+  <p class="note">Verify the type of change (not merely the existing land use) using independent, dated evidence. Quick impressions alone are not training ground truth.</p>
+  <p id="verifySelected" class="note"></p>
+  <label>Class
+  <select id="labelClass"><option value="construction">Construction change</option><option value="agriculture">Agricultural change</option><option value="unchanged">No significant change</option></select></label>
+  <label>Site group (same physical site = same ID)
+  <input id="labelSite" maxlength="64" placeholder="e.g. a7_section_01"></label>
+  <label>Independent dated evidence URL
+  <input id="labelUrl" type="url" placeholder="https://..."></label>
+  <label>Evidence date
+  <input id="labelDate" type="date"></label>
+  <label>What does it prove?
+  <textarea id="labelNote" maxlength="1200" placeholder="Describe which change is independently confirmed and when."></textarea></label>
+  <label><input id="labelAttestation" type="checkbox">I checked the linked evidence and confirm it supports this exact location and period.</label>
+  <button id="submitLabel" type="button">Open verified-label GitHub Issue</button>
+  <p id="labelMessage">Submitting the issue on GitHub is a separate, manual confirmation step.</p>
+ </section>
+ <footer>New change-focused reviews are stored separately. Older rounds remain in browser storage and are not reinterpreted as change labels. Provisional clicks never train a model. Export creates a backup.</footer>
+</main>
+<script src="quick_label.js"></script>
+<script src="training_app.js"></script>
+</body>
+</html>
