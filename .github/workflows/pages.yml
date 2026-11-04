@@ -51,6 +51,8 @@ jobs:
           else
             echo '{"status":"unavailable","message":"No real four-scene featurepack was generated. No model trained."}' > site/validation_v05.json
           fi
+      - name: Process registered motorway study areas
+        run: python -m scripts.build_portfolio --config projects/regions.json --output site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
