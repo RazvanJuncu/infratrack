@@ -1,0 +1,17 @@
+name: Discover A0 OSM alignment
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/discover_osm.py
+      - .github/workflows/discover-osm.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install requests
+      - run: python scripts/discover_osm.py
