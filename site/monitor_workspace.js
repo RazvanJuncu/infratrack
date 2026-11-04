@@ -133,9 +133,16 @@ function renderTimeline(){
   card.title="Drag to either Canvas slot, or click to add";
   const cacheKey=current?.id+":"+scene.id;
   const image=cached.get(cacheKey);
-  if(image?.image){
+  const originalTileThumbnail=scene.assets?.thumbnail?.href;
+  const tilePreview=typeof originalTileThumbnail==="string"&&
+    originalTileThumbnail.startsWith("https://")?originalTileThumbnail:null;
+  if(image?.image||tilePreview){
     const t=node("img",undefined,"thumb");
-    t.src=image.image;t.alt="";
+    t.src=image?.image||tilePreview;
+    t.alt=image?.image?"Crop of this 2 km study square":
+       "Thumbnail of the whole satellite tile, not this selected square";
+    t.title=t.alt;
+    t.loading="lazy";
     card.append(t);
   }
   card.append(node("div",dayText(scene),"day"));
