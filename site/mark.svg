@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-label="InfraTrack observation-frame mark">
+<rect x="6" y="8" width="27" height="27" rx="3.5" stroke="#A3E4D1" stroke-width="2.7"/>
+<rect x="15" y="13" width="27" height="27" rx="3.5" stroke="#EFF6F2" stroke-width="2.7"/>
+<path d="M28.5 13v27" stroke="#A3E4D1" stroke-width="2.7"/>
+<path d="M11.5 8h7M6 13.5v6" stroke="#A3E4D1" stroke-width="3" stroke-linecap="round"/>
+</svg>
