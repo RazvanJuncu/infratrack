@@ -15,6 +15,7 @@ from rasterio.enums import Resampling
 from rasterio.transform import from_origin
 from corridor_osm import fetch_route, corridor_raster, aoi_bounds, ndvi_profile
 from spectral_v04 import triage as spectral_triage, render_rgba, report as spectral_report
+from feature_v05 import create_featurepack
 
 STAC = "https://earth-search.aws.element84.com/v1/search"
 COLLECTION = "sentinel-2-c1-l2a"
@@ -261,6 +262,19 @@ def main():
     overlay[corridor_change]=np.array([50,234,205,204],dtype=np.uint8)
     Image.fromarray(overlay,"RGBA").save(output/"corridor_changes.png",optimize=True)
     (output/"corridor.geojson").write_text(json.dumps(route,ensure_ascii=False),encoding="utf-8")
+    # Validation Lab never invents classes: these are raw measurements from
+    # already retrieved real scenes, with scene-bound provenance signatures.
+    v05={"status":"unavailable","message":"Four real observations not available"}
+    if spectral is not None and spring_scene is not None:
+        try:
+            v05=create_featurepack(
+                output,transform,
+                [(a,before,scl0),(b,after,scl1),
+                 (spring_scene,spring_bands,spring_scl),(c,followup,scl2)],
+                worldcover,corridor,route_source)
+        except Exception as exc:
+            v05={"status":"unavailable","message":str(exc)[:200]}
+            print(f"Validation featurepack unavailable: {exc}",flush=True)
     if spectral is not None:
         colors=render_rgba(spectral)
         Image.fromarray(colors,"RGBA").save(
@@ -289,6 +303,7 @@ def main():
                      "candidate_hectares":round(float(corridor_change.sum())/100,2),
                      "confidence":"Mapped OSM alignment, not independently verified survey"},
         "temporal": series,
+        "v05":v05,
         "v04": (
             dict({"status":"ready",
                   "spring_scene":{"date":spring_scene["properties"]["datetime"][:10],
