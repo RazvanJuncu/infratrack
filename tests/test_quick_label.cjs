@@ -17,7 +17,7 @@ function storageFor(payload){
 }
 function provisional(point,label){
  return {row:point.row,col:point.col,label,study_id:STUDY,signature:SIG,
-         status:'provisional_not_ground_truth',training_eligible:false};
+         status:'provisional_not_ground_truth',question_version:'change-types-v2',training_eligible:false};
 }
 
 test('quick classification has exactly four choices and unsure cannot be trusted ground truth',()=>{
@@ -39,6 +39,7 @@ test('provisional data at unauthorized pixels or with forged verified status is 
  const extraneous=provisional({row:199,col:199},'agriculture');
  const suspect={...provisional(points[1],'construction'),status:'verified_ground_truth'};
  const store=storageFor({type:'provisional_review',study_id:STUDY,signature:SIG,
+                   question_version:'change-types-v2',
                    items:[extraneous,suspect,provisional(points[0],'unchanged')]});
  assert.deepEqual(Object.keys(readDrafts(store,STUDY,SIG,points)),['10:20']);
 });
@@ -57,4 +58,18 @@ test('invalid and corrupt local data do not crash app or become model labels',()
  assert.deepEqual(readDrafts(store,STUDY,SIG,points),{});
  assert.throws(()=>storageKey(STUDY,'not-a-scene-signature'));
  assert.throws(()=>pixelKey({row:5.3,col:1}));
+});
+
+test('old land-type review namespace is isolated from new change reviews',()=>{
+ const old=new Map([['infratrack:quick-review:v1:'+STUDY+':'+SIG,
+    JSON.stringify({type:'provisional_review',study_id:STUDY,signature:SIG,
+      items:[{...provisional(points[0],'agriculture'),question_version:undefined}]})]]);
+ const storage={getItem:key=>old.get(key)||null};
+ assert.equal(Object.keys(readDrafts(storage,STUDY,SIG,points)).length,0);
+ assert.match(storageKey(STUDY,SIG),/v2:change-types:/);
+});
+test('old draft payload at new key is rejected without version',()=>{
+ const old={type:'provisional_review',study_id:STUDY,signature:SIG,
+   items:[{...provisional(points[0],'unchanged'),question_version:undefined}]};
+ assert.equal(Object.keys(readDrafts(storageFor(old),STUDY,SIG,points)).length,0);
 });
