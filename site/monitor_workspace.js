@@ -392,6 +392,7 @@ async function loadCatalog(){
    slots.before=available.has(slots.before)?slots.before:null;
    slots.after=available.has(slots.after)?slots.after:null;
    renderTimeline();renderSlots();
+   if(selectedIds().length)await updateCanvas();
    statusTimeline(scenes.length+" observations · newest first · scroll to older dates");
    if(!scenes.length)notice("No acquisitions found. Try a longer time interval.");
  }catch(err){
@@ -411,6 +412,9 @@ function updateDefault(){
 async function selectArea(area){
  if(!area)return;
  catalogSeq++;cancelView();
+ // A previous "most recent" scan may have been cancelled by changing areas.
+ // The button must never remain disabled for the newly selected area.
+ latestBusy=false;$("latestButton").disabled=false;
  current=area;slots={before:null,after:null};
  scenes=[];sceneIndex=new Map();cached.clear();lastTap=null;
  highlighted=false;$("highlightBtn").setAttribute("aria-pressed","false");
