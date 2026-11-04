@@ -111,7 +111,8 @@ def produce(features,labels,out,overlay):
                     r=json.loads(line)
                     if (r.get("label") in CLASSES and r.get("signature")==signature
                         and r.get("study_id")==study_id and r.get("reviewed_by")
-                        and r.get("evidence_url")):
+                        and r.get("evidence_url") and
+                        r.get("question_version")=="change-types-v2"):
                         rows.append(r)
                 except (ValueError,TypeError) as e:
                     print(f"Invalid labeled line {ln}: {e}")
