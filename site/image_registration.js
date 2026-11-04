@@ -170,9 +170,9 @@ function fitAffine(matches,w,h,options={}){
  ].map(([u,v])=>Math.hypot(cx[0]+cx[1]*u+cx[2]*v,cy[0]+cy[1]*u+cy[2]*v)));
  const determinant=(1+cx[1]/(w/2))*(1+cy[2]/(h/2))-
                        cx[2]*cy[1]/((w/2)*(h/2));
- if(rmse>1.25||limit>11||Math.abs(determinant-1)>.035||
-    Math.abs(cx[1])+Math.abs(cx[2])>5||
-    Math.abs(cy[1])+Math.abs(cy[2])>5)
+ if(rmse>1.25||limit>6||Math.abs(determinant-1)>.025||
+    Math.abs(cx[1])+Math.abs(cx[2])>3||
+    Math.abs(cy[1])+Math.abs(cy[2])>3)
    return {ok:false,reason:"Geometric correction exceeds conservative safety limits",
         rmse,shift:limit,featureCount:inliers.length};
  return {ok:true,cx,cy,rmse,featureCount:inliers.length,
