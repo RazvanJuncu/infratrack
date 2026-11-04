@@ -14,6 +14,7 @@ from rasterio.vrt import WarpedVRT
 from rasterio.enums import Resampling
 from rasterio.transform import from_origin
 from corridor_osm import fetch_route, corridor_raster, aoi_bounds, ndvi_profile
+from spectral_v04 import triage as spectral_triage, render_rgba, report as spectral_report
 
 STAC = "https://earth-search.aws.element84.com/v1/search"
 COLLECTION = "sentinel-2-c1-l2a"
@@ -89,7 +90,7 @@ def select_scene(lat, lon, size_m, pixels, period, cloud_limit, transform):
     errors = []
     for item in scenes[:8]:
         try:
-            keys = ("red", "green", "blue", "nir", "scl")
+            keys = ("red", "green", "blue", "nir", "swir16", "scl")
             if any(k not in item.get("assets", {}) for k in keys):
                 continue
             bands = {k: read_band(item, k, transform, pixels) for k in keys[:-1]}
@@ -205,6 +206,20 @@ def main():
                                      args.max_cloud, transform)
     corridor_change = mask & corridor
     analysis = interpret_landcover(corridor_change, clear, worldcover, followup, scl2)
+    # Experimental four-date multispectral triage; absence of imagery is explicit.
+    print("v0.4: reading additional 2026 spring scene and SWIR bands...",flush=True)
+    spectral=None
+    spring_scene=None
+    spectral_error=None
+    try:
+        spring_scene,spring_bands,spring_scl=select_scene(
+            args.lat,args.lon,metres,pixels,"2026-04-01/2026-06-30",
+            args.max_cloud,transform)
+        spectral=spectral_triage(before,after,spring_bands,followup,
+                                scl0,scl1,spring_scl,scl2,corridor,worldcover)
+    except Exception as err:
+        spectral_error=str(err)[:350]
+        print(f"v0.4 multispectral inference unavailable: {spectral_error}",flush=True)
     # A five-year same-season profile, with missing observations recorded explicitly.
     series=[]
     for year in (2022,2023,2024,2025,2026):
@@ -246,6 +261,9 @@ def main():
     overlay[corridor_change]=np.array([50,234,205,204],dtype=np.uint8)
     Image.fromarray(overlay,"RGBA").save(output/"corridor_changes.png",optimize=True)
     (output/"corridor.geojson").write_text(json.dumps(route,ensure_ascii=False),encoding="utf-8")
+    if spectral is not None:
+        Image.fromarray(render_rgba(spectral),"RGBA").save(
+            output/"spectral_candidates.png",optimize=True)
     for name, image in [("before.png", img0), ("after.png", img1),
                         ("candidates.png", marked), ("interpreted.png", interpreted),
                         ("corridor_preview.png",outlined)]:
@@ -265,6 +283,15 @@ def main():
                      "candidate_hectares":round(float(corridor_change.sum())/100,2),
                      "confidence":"Mapped OSM alignment, not independently verified survey"},
         "temporal": series,
+        "v04": (
+            dict({"status":"ready",
+                  "spring_scene":{"date":spring_scene["properties"]["datetime"][:10],
+                                  "id":spring_scene["id"]}},
+                 **spectral_report(spectral))
+            if spectral is not None else
+            {"status":"unavailable","reason":spectral_error or "Additional Sentinel image unavailable",
+             "counts_as_construction":False, "neural_classifier":False}),
+        
         "before": {"date": a["properties"]["datetime"][:10], "id": a["id"],
                    "cloud_percent_scene": a["properties"].get("eo:cloud_cover")},
         "after": {"date": b["properties"]["datetime"][:10], "id": b["id"],
@@ -286,7 +313,8 @@ def main():
         "source": "Element 84 Earth Search · Copernicus Sentinel-2 Level-2A",
         "source_api": "https://earth-search.aws.element84.com/v1",
         "images": ["before.png", "after.png", "candidates.png", "interpreted.png",
-                   "corridor_preview.png","corridor_changes.png"]
+                   "corridor_preview.png","corridor_changes.png"] +
+                  (["spectral_candidates.png"] if spectral is not None else [])
     }
     (output / "data.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
