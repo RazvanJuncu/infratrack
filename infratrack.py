@@ -106,6 +106,69 @@ def rgb_image(scene):
     img = np.stack([scene["red"], scene["green"], scene["blue"]], axis=-1)
     return (255 * np.power(np.clip((img - .012) / .33, 0, 1), .85)).astype(np.uint8)
 
+
+def worldcover_tile(lat, lon):
+    """ESA WorldCover 3° tile anchored at its south-west corner."""
+    from math import floor
+    row = int(floor(lat / 3.0) * 3)
+    col = int(floor(lon / 3.0) * 3)
+    return f"{'N' if row >= 0 else 'S'}{abs(row):02d}{'E' if col >= 0 else 'W'}{abs(col):03d}"
+
+
+def read_worldcover(lat, lon, transform, pixels):
+    """Read precomputed ML-based 2021 ESA WorldCover land-use labels from a public COG."""
+    tile = worldcover_tile(lat, lon)
+    url = ("https://esa-worldcover.s3.amazonaws.com/v200/2021/map/"
+           f"ESA_WorldCover_10m_2021_v200_{tile}_Map.tif")
+    with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
+                       GDAL_HTTP_MAX_RETRY="3", GDAL_HTTP_RETRY_DELAY="1"):
+        with rasterio.open(url) as source:
+            with WarpedVRT(source, crs="EPSG:32635", transform=transform,
+                           width=pixels, height=pixels,
+                           resampling=Resampling.nearest) as layer:
+                array = layer.read(1).astype(np.uint8)
+    if not np.any(array):
+        raise RuntimeError("WorldCover returned no land-cover classes")
+    return array, url
+
+
+def interpret_landcover(raw, valid, worldcover, later, later_scl):
+    """Conservative triage, NOT a construction AI model.
+    
+    Land-cover labels are provided by a pretrained ESA classification product.
+    A pre-existing cropland label does not *rule out* a later highway construction:
+    those pixels remain visible for manual review. A non-cropland, persistent
+    bare/low-vegetation signature is a candidate, not a confirmed worksite.
+    """
+    shape = raw.shape
+    if worldcover.shape != shape or later_scl.shape != shape:
+        raise ValueError("Classification rasters must align")
+    good = valid & np.isin(later_scl, [4, 5])
+    for b in ("nir", "red"):
+        good &= np.isfinite(later[b]) & (later[b] > 0)
+    ndvi = (later["nir"] - later["red"]) / (later["nir"] + later["red"] + 1e-6)
+    persistent = raw & good & (ndvi < .35)
+    agriculture = raw & (worldcover == 40)
+    review = raw & (worldcover != 40) & ~persistent
+    noncrop_persistent = persistent & (worldcover != 40)
+    unknown = raw & (worldcover == 0)
+    return {"agricultural_context": agriculture & ~unknown,
+            "persistent_noncrop": noncrop_persistent & ~unknown,
+            "manual_review": review | unknown, "later_valid": good}
+
+
+def layered_preview(base_image, classification):
+    image = base_image.copy()
+    colors = [
+        ("agricultural_context", [239, 169, 67]),   # amber
+        ("manual_review", [224, 88, 108]),          # red
+        ("persistent_noncrop", [64, 218, 192])      # cyan
+    ]
+    for name, color in colors:
+        chosen = classification[name]
+        image[chosen] = (.35 * image[chosen] + .65 * np.array(color)).astype(np.uint8)
+    return image
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--lat", type=float, default=44.5128)
@@ -115,6 +178,7 @@ def main():
     parser.add_argument("--after", default="2025-06-01/2025-08-31")
     parser.add_argument("--max-cloud", type=float, default=35)
     parser.add_argument("--output", default="site")
+    parser.add_argument("--followup", default="2026-08-01/2026-09-30")
     args = parser.parse_args()
     assert .2 <= args.size_km <= 5, "MVP AOI must be 0.2-5 km"
     metres = 1000 * args.size_km
@@ -127,6 +191,12 @@ def main():
     a, before, scl0 = select_scene(args.lat, args.lon, metres, pixels, args.before, args.max_cloud, transform)
     b, after, scl1 = select_scene(args.lat, args.lon, metres, pixels, args.after, args.max_cloud, transform)
     mask, clear = vegetation_candidates(before, after, scl0, scl1)
+    print("Loading ESA WorldCover 2021 ML land-cover map and 2026 follow-up...", flush=True)
+    worldcover, wc_url = read_worldcover(args.lat, args.lon, transform, pixels)
+    c, followup, scl2 = select_scene(args.lat, args.lon, metres, pixels, args.followup,
+                                     args.max_cloud, transform)
+    analysis = interpret_landcover(mask, clear, worldcover, followup, scl2)
+
     if clear.mean() < .45:
         raise RuntimeError(f"Only {clear.mean():.1%} pixels clear in BOTH scenes, unusable comparison")
     output = Path(args.output)
@@ -134,7 +204,9 @@ def main():
     img0, img1 = rgb_image(before), rgb_image(after)
     marked = img1.copy()
     marked[mask] = (.40 * marked[mask] + .60 * np.array([255, 68, 87])).astype(np.uint8)
-    for name, image in [("before.png", img0), ("after.png", img1), ("candidates.png", marked)]:
+    interpreted = layered_preview(img1, analysis)
+    for name, image in [("before.png", img0), ("after.png", img1),
+                        ("candidates.png", marked), ("interpreted.png", interpreted)]:
         Image.fromarray(image, "RGB").save(output / name, optimize=True)
     result = {
         "status": "ready",
@@ -150,9 +222,20 @@ def main():
         "clear_overlap_percent": round(100 * float(clear.mean()), 1),
         "candidate_hectares": round(float(mask.sum()) * resolution * resolution / 10000, 2),
         "candidate_pixels": int(mask.sum()), "pixel_size_m": resolution,
+        "interpretation": {
+            "method": "ESA WorldCover 2021 ML land-cover map + independent 2026 Sentinel-2 observation + transparent rule-based triage",
+            "local_neural_network": False,
+            "note": "These are hypotheses, not confirmed agriculture or infrastructure. The 2021 crop mask may include roads built later.",
+            "followup": {"date": c["properties"]["datetime"][:10], "id": c["id"]},
+            "worldcover_tile": worldcover_tile(args.lat, args.lon),
+            "worldcover_url": wc_url,
+            "agricultural_context_hectares": round(float(analysis["agricultural_context"].sum()) / 100, 2),
+            "persistent_noncrop_hectares": round(float(analysis["persistent_noncrop"].sum()) / 100, 2),
+            "manual_review_hectares": round(float(analysis["manual_review"].sum()) / 100, 2)
+        },
         "source": "Element 84 Earth Search · Copernicus Sentinel-2 Level-2A",
         "source_api": "https://earth-search.aws.element84.com/v1",
-        "images": ["before.png", "after.png", "candidates.png"]
+        "images": ["before.png", "after.png", "candidates.png", "interpreted.png"]
     }
     (output / "data.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
