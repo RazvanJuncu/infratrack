@@ -150,13 +150,18 @@ async function alignedRGBA(scene,decodeImage){
 }
 // RGB differences: an *untrained* visual signal, not calibrated change detection.
 // Cloud/season/atmosphere may produce false positives, especially without SCL.
-function rgbDifference(before,after,threshold=48){
+function rgbDifference(before,after,threshold=48,beforeMask=null,afterMask=null){
  if(!(before instanceof Uint8ClampedArray)||!(after instanceof Uint8ClampedArray)||
     before.length!==after.length||before.length%4)
    throw Error("Aligned 8-bit RGBA images are required");
  const overlay=new Uint8ClampedArray(before.length);
+ const pixels=before.length/4;
+ if(beforeMask&&beforeMask.length!==pixels||afterMask&&afterMask.length!==pixels)
+   throw Error("Cloud masks must match the aligned satellite grid");
  let changed=0,valid=0;
  for(let p=0;p<before.length;p+=4){
+   const pixel=p/4;
+   if(beforeMask&&beforeMask[pixel]!==1||afterMask&&afterMask[pixel]!==1)continue;
    const a=before[p],b=before[p+1],c=before[p+2],
       d=after[p],e=after[p+1],f=after[p+2];
    if(before[p+3]===0||after[p+3]===0||
