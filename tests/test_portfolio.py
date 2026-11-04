@@ -46,6 +46,7 @@ class PortfolioTests(unittest.TestCase):
         form={"study_id":"a7-ramnicu-sud-2km-v1",
               "signature":"0123456789abcdef","row":50,"col":90,
               "label":"agriculture","site_group":"block_r02_c03",
+              "question_version":"change-types-v2",
               "evidence_url":"https://example.org/dated-aerial-evidence",
               "evidence_date":"2025-01-10",
               "note":"Source-dated aerial imagery independently confirms the crop cycle",
