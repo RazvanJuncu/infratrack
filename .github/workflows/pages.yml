@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "20 6 * * *"  # Daily UTC recheck for registered research windows
 permissions:
   contents: read
   pages: write
@@ -22,8 +24,8 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Run deterministic tests
         run: python -m unittest discover -s tests -v
-      - name: Test four-button browser review logic
-        run: node --test tests/test_quick_label.cjs
+      - name: Test browser review, European watchlist and recent training
+        run: node --test tests/test_quick_label.cjs tests/test_monitor_ui.cjs
       - name: Resolve mapped corridor and analyze real Sentinel-2
         shell: bash
         run: |
@@ -53,6 +55,8 @@ jobs:
           fi
       - name: Process registered motorway study areas
         run: python -m scripts.build_portfolio --config projects/regions.json --output site
+      - name: Refresh recent Sentinel-2 views and significant-change review queue
+        run: python -m scripts.recent_watch --config projects/regions.json --output site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
