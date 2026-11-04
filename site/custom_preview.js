@@ -73,43 +73,21 @@ function pixelWindow(image,bbox) {
    throw Error("Scene pixel coverage is insufficient");
  return raw;
 }
-async function previewOne(item,area,GeoTIFF,proj4,signal){
+async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
  if(signal?.aborted)throw Error("Cancelled");
  const url=urlAsset(item,"visual");
- const tiff=await GeoTIFF.fromUrl(url,{cacheSize:10000000});
+ if(!url)throw Error("No original visual GeoTIFF for this observation");
+ const tiff=await GeoTIFF.fromUrl(url,{cacheSize:2000000});
  const im=await tiff.getImage(0);
- let epsg=Number(item?.assets?.visual?.["proj:epsg"]||
+ const epsg=Number(item?.assets?.visual?.["proj:epsg"]||
                  item?.properties?.["proj:epsg"]||
                  im.getGeoKeys?.()?.ProjectedCSTypeGeoKey||
                  im.geoKeys?.ProjectedCSTypeGeoKey);
- if(!isUTM(epsg))throw Error("Unrecognized UTM CRS");
+ if(!isUTM(epsg))throw Error("Unrecognized Sentinel UTM image projection");
  const bbox=projectedBounds(area,epsg,proj4);
- const window=pixelWindow(im,bbox);
- if(im.getSamplesPerPixel()<3)throw Error("No 3-band true-color COG");
- const size=G.outputSize;
- // Read only a 2×2 km window; COG's internal overviews are used when supported.
- const vals=await tiff.readRasters({
-     bbox,width:size,height:size,samples:[0,1,2],
-     interleave:true,resampleMethod:"bilinear"
- });
- if(signal?.aborted)throw Error("Cancelled");
- if(vals.length!==size*size*3)throw Error("Unexpected raster samples");
- const bytes=new Uint8ClampedArray(size*size*4);
- const type=im.getSampleFormat?.()||1;
- const imtype=Array.isArray(type)?type[0]:type;
- const bps=im.getBitsPerSample();
- const bits=Array.isArray(bps)?bps[0]:bps;
- const byteRGB=bits===8&&imtype===1;
- if(!byteRGB)throw Error("Visual COG is not 8-bit RGB; cannot display faithfully");
- let visible=0;
- for(let i=0;i<size*size;i++){
-   const j=i*3,k=i*4;
-   const r=Number(vals[j]),g=Number(vals[j+1]),b=Number(vals[j+2]);
-   bytes[k]=r;bytes[k+1]=g;bytes[k+2]=b;bytes[k+3]=255;
-   if(r>0||g>0||b>0)visible++;
- }
- if(visible/size/size<.8)throw Error("Scene has too many missing pixels");
- let cloudFraction=null;
+ pixelWindow(im,bbox);
+ if(im.getSamplesPerPixel()<3)throw Error("Original image does not contain three RGB bands");
+ let cloudFraction=null,localCheckError=null;
  const scl=urlAsset(item,"scl");
  if(scl){
    try{
@@ -122,20 +100,58 @@ async function previewOne(item,area,GeoTIFF,proj4,signal){
      const sclBounds=projectedBounds(area,sclProjection,proj4);
      pixelWindow(sclImage,sclBounds);
      const sample=await sclTiff.readRasters({
-       bbox:sclBounds,width:100,height:100,samples:[0],interleave:true,
+       bbox:sclBounds,width:96,height:96,samples:[0],interleave:true,
        resampleMethod:"nearest"
      });
      cloudFraction=localClear(sample);
-   }catch(_){cloudFraction=null;}
+   }catch(err){localCheckError=String(err?.message||err);}
+ }else localCheckError="SCL asset missing";
+ if(signal?.aborted)throw Error("Cancelled");
+ const minClear=Number.isFinite(options.minClear)?options.minClear:G.minClear;
+ if(options.requireLocalScreening&&cloudFraction===null)
+   throw Error("Could not verify local cloud cover: "+(localCheckError||"unknown"));
+ if(cloudFraction!==null&&cloudFraction<minClear&&!options.allowCloudy)
+   throw Error("Locally cloudy or invalid ("+Math.round(100*(1-cloudFraction))+
+       "% unusable pixels); no scene substitution");
+ const size=G.outputSize;
+ const vals=await tiff.readRasters({
+     bbox,width:size,height:size,samples:[0,1,2],
+     interleave:true,resampleMethod:"nearest"
+ });
+ if(signal?.aborted)throw Error("Cancelled");
+ if(vals.length!==size*size*3)throw Error("Unexpected raster size from source");
+ const bytes=new Uint8ClampedArray(size*size*4);
+ const typ=im.getSampleFormat?.()||1;
+ const imtype=Array.isArray(typ)?typ[0]:typ;
+ const bps=im.getBitsPerSample();
+ const bits=Array.isArray(bps)?bps[0]:bps;
+ if(bits!==8||imtype!==1)throw Error("Original visual image is not 8-bit RGB");
+ let visible=0;
+ for(let i=0;i<size*size;i++){
+   const j=i*3,k=i*4;
+   const r=Number(vals[j]),g=Number(vals[j+1]),b=Number(vals[j+2]);
+   bytes[k]=r;bytes[k+1]=g;bytes[k+2]=b;bytes[k+3]=255;
+   if(r>0||g>0||b>0)visible++;
  }
- if(cloudFraction!==null&&cloudFraction<G.minClear)
-   throw Error("Locally cloudy ("+Math.round(100*(1-cloudFraction))+"% cloud or unusable)");
+ if(visible/size/size<.8)throw Error("Original image has too many missing pixels");
  const canvas=global.document.createElement("canvas");canvas.width=size;canvas.height=size;
- canvas.getContext("2d").putImageData(new ImageData(bytes,size,size),0,0);
- const image=canvas.toDataURL("image/png");
- return {id:item.id,date:itemDate(item),
-     cloudFraction,globalCloud:Number(item.properties["eo:cloud_cover"]),
-     image,epsg,sourceAsset:url};
+ const ctx=canvas.getContext("2d");
+ if(!ctx)throw Error("Canvas 2D unavailable in this browser");
+ const pixels=ctx.createImageData(size,size);
+ pixels.data.set(bytes);ctx.putImageData(pixels,0,0);
+ return {
+   id:item.id,date:itemDate(item),cloudFraction,
+   globalCloud:Number(item.properties["eo:cloud_cover"]),
+   image:canvas.toDataURL("image/png"),
+   rgba:bytes,width:size,height:size,
+   epsg,sourceAsset:url,
+   localCheckError,
+   warning:cloudFraction===null?
+     "Local cloud screening unavailable — scene cloud percentage is not local.":
+     cloudFraction<minClear?
+       "Cloudy at selected location ("+Math.round(100*(1-cloudFraction))+"% unsuitable).":
+       null
+ };
 }
 async function render(area,items,options={}){
  if(!global.GeoTIFF||!global.proj4)throw Error(
@@ -207,7 +223,7 @@ async function renderSelected(area,items,options={}) {
    // Any individual scene failure is returned to the user, not replaced by
    // another scene with a different timestamp.
    try {
-     const result=await previewOne(item,area,global.GeoTIFF,global.proj4,signal);
+     const result=await previewOne(item,area,global.GeoTIFF,global.proj4,signal,options);
      if(signal?.aborted)throw Error("Cancelled");
      rendered.push(result);
      if(cache){
