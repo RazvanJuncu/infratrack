@@ -33,6 +33,14 @@ jobs:
             echo "::warning::Satellite imagery was not available; publishing explicit no-data state"
             python scripts/failure_page.py
           fi
+      - name: Evaluate owner-sourced labels with site-held-out testing
+        shell: bash
+        run: |
+          if [ -f site/features_v05.npz ]; then
+            python scripts/train_validation.py
+          else
+            echo '{"status":"unavailable","message":"No real four-scene featurepack was generated. No model trained."}' > site/validation_v05.json
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
