@@ -68,7 +68,7 @@ if(typeof module==="object"&&module.exports)module.exports=core;
 if(!global.document)return;
 const $=id=>document.getElementById(id);
 let sites=[],customs=[],selected=null,selection=null,map=null,pin=null,rect=null;
-let fetchId=0,manifest=null,visibility="ready";
+let fetchId=0,manifest=null,visibility="ready",activePreview=null;
 function say(s){$("monitorStatus").textContent=s;}
 function save(){
  try{localStorage.setItem(STORE,JSON.stringify(customs));return true;}
@@ -108,7 +108,7 @@ function renderSites(){
    const button=makeElement("button",null,"area-item"+(selected?.id===site.id?" active":""));
    const strong=makeElement("strong",site.name);
    const info=makeElement("small",site.category==="saved"?
-      "My area · live acquisition dates":(site.status==="ready"?"Processed imagery":"No processed imagery"));
+      "My area · on-demand satellite comparison":(site.status==="ready"?"Processed imagery":"No processed imagery"));
    button.append(strong,info);
    button.onclick=()=>choose(site);
    $("areaList").append(button);
@@ -155,10 +155,12 @@ async function refreshPublished(site,request){
  }
 }
 async function choose(site){
+ if(activePreview)activePreview.aborted=true;
+ activePreview=null;
  selected=site;renderSites();
  $("selectionName").textContent=site.name;
  $("selectionKind").textContent=site.category==="saved"?
-  "My saved area · 2 km study square":"Registered research area · 2 km study square";
+  "My saved area · 2 km study square · browser-rendered images":"Registered research area · 2 km study square";
  $("pair").hidden=true;
  $("recentSummary").textContent="";
  $("imageNote").textContent="Loading source information…";
@@ -172,7 +174,7 @@ async function choose(site){
    }
  }else{
    ++fetchId;
-   $("imageNote").textContent="Custom areas currently support fresh Sentinel acquisition monitoring. Automatic image crops/change detection are available only for registered processed areas.";
+   $("imageNote").textContent="Searching real Sentinel-2 scenes for this area; preparing an on-demand before/after image crop…";
  }
  await refreshCatalog();
 }
@@ -205,13 +207,57 @@ async function refreshCatalog(){
    }
    $("checkedAt").textContent="Catalog checked "+new Date().toLocaleString()+
      " · "+scenes.length+" unique dates shown";
-   say("Observations are real catalog acquisitions, not locally cloud-checked images or detected change.");
+   say("Observations are real catalog acquisitions. Imagery is checked separately for local clouds.");
+   if(area.category==="saved"){
+     if(activePreview)activePreview.aborted=true;
+     const token={aborted:false};
+     activePreview=token;
+     $("pair").hidden=true;
+     $("recentSummary").textContent="Checking actual image pixels and local cloud coverage…";
+     $("imageNote").textContent="This comparison is rendered in your browser, not preprocessed by InfraTrack's server.";
+     if(!global.InfraCustomPreview){
+       $("recentSummary").textContent="Image-rendering engine unavailable.";
+       $("imageNote").textContent="Reload to retry. Catalog dates above remain available.";
+     }else{
+       global.InfraCustomPreview.render(area,data.features,{
+         days,signal:token,
+         onProgress:detail=>{
+           if(!token.aborted&&selected?.id===area.id)
+             $("recentSummary").textContent=detail;
+         }
+       }).then(pair=>{
+         if(token.aborted||selected?.id!==area.id)return;
+         $("beforeImage").src=pair.before.image;
+         $("afterImage").src=pair.after.image;
+         $("beforeDate").textContent="BEFORE · "+pair.before.date;
+         $("afterDate").textContent="AFTER · "+pair.after.date;
+         $("pair").hidden=false;
+         $("recentSummary").textContent="Two real Sentinel-2 image crops · "+
+           pair.before.date+" → "+pair.after.date;
+         $("imageNote").textContent=pair.note+
+           " This is a visual comparison only; no automatic construction/land-cover classification for saved areas.";
+         say("Real satellite images loaded for your custom area. Saved areas still are not monitored or processed by the server.");
+       }).catch(err=>{
+         if(token.aborted||selected?.id!==area.id)return;
+         $("pair").hidden=true;
+         $("recentSummary").textContent="No usable on-demand satellite image pair.";
+         $("imageNote").textContent=err.message+
+           " · Acquisition dates remain listed below; try a longer date range or reload.";
+         say("The catalog returned data, but original image crops could not be rendered. No imagery was invented.");
+       });
+     }
+   }
  }catch(e){
    if(request!==fetchId)return;
    $("observations").replaceChildren(makeElement("p",
       "Live catalog unavailable: "+e.message+
       ". You can retry. Saved areas remain on this browser.","muted"));
    $("checkedAt").textContent="Check failed";
+   if(area.category==="saved"){
+     $("pair").hidden=true;
+     $("imageNote").textContent="Cannot fetch actual satellite observations: "+e.message;
+     $("recentSummary").textContent="No image pair available.";
+   }
  }
 }
 function addArea(){
@@ -225,7 +271,7 @@ function addArea(){
  if(!validCustom(item)){say("Invalid area. Please choose another location.");return;}
  customs.push(item);sites.push(item);save();
  $("areaName").value="";selection=null;
- say("Area saved locally. Latest Sentinel acquisitions will be checked whenever you open or refresh Monitor.");
+ say("Area saved locally. InfraTrack will attempt an on-demand real satellite comparison.");
  choose(item);
 }
 function deleteArea(){
