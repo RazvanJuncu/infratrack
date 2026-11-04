@@ -131,3 +131,15 @@ test('explicit scene selection preserves its exact IDs and accepts a single scen
    ...a,assets:{thumbnail:{href:'https://real-source.example/preview.png'}}
  }]),/visual asset/);
 });
+
+test('rapid repeated clicks on the same date across re-rendered cards are ignored',()=>{
+ const tap={id:'scene-2026-10-04',at:10000};
+ assert.equal(monitor.rapidRepeat(tap,'scene-2026-10-04',10250),true);
+ assert.equal(monitor.rapidRepeat(tap,'scene-2026-10-04',10549),true);
+ assert.equal(monitor.rapidRepeat(tap,'scene-2026-10-04',10550),false);
+ assert.equal(monitor.rapidRepeat(tap,'scene-2026-09-09',10040),false);
+ let selected=monitor.toggleSceneIds([],'scene-2026-10-04');
+ if(!monitor.rapidRepeat(tap,'scene-2026-10-04',10220))
+    selected=monitor.toggleSceneIds(selected,'scene-2026-10-04');
+ assert.deepEqual(selected,['scene-2026-10-04']);
+});
