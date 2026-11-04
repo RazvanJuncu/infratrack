@@ -28,7 +28,7 @@ test('brand mark is source-controlled vector with no external image dependency',
  assert.match(svg,/<svg /);
  assert.match(svg,/viewBox="0 0 48 48"/);
  assert.match(svg,/<\/svg>/);
- assert.doesNotMatch(svg,/<image |<script|https?:\/\//i);
+ assert.doesNotMatch(svg,/<image\s|<script\b|(?:href|xlink:href)=["']https?:\/\//i);
 });
 
 test('Brand Lab previews naming concepts but does not modify production names or localStorage',()=>{
