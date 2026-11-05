@@ -80,4 +80,9 @@ test('Monitor requires common-grid previews before permitting residual overlay',
  assert.match(previewScript,/regridSamples\(sourceRGB,3,visualGrid\)/);
  assert.match(previewScript,/regridSamples\(sourceSCL,1,sclGrid\)/);
  assert.match(script,/registrationV2\.estimateRegistration\(/);
+ assert.match(script,/function sameGeographicGrid\(/);
+ assert.match(script,/function showGeographicPair\(/);
+ assert.match(script,/showGeographicPair\(first,second,reason\)/);
+ assert.match(script,/\$\("highlightBtn"\)\.disabled=true/);
+
 });
