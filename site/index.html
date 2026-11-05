@@ -123,7 +123,7 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
      <div id="canvasDivider" hidden></div>
      <div id="canvasLabels" hidden><span id="labelOld" class="chip left">BEFORE</span><span id="labelNew" class="chip right">AFTER</span></div>
      <canvas id="changeLayer" hidden aria-label="Unverified grouped RGB changes"></canvas>
-     <div id="regionFocus" hidden aria-hidden="true"></div>
+     <canvas id="regionFocus" hidden aria-hidden="true"></canvas>
      <div id="unregisteredPair" hidden aria-label="Unregistered source images displayed side-by-side">
         <figure><img id="unregisteredBefore" alt="Earlier satellite image, alignment not verified"><figcaption id="unregisteredBeforeDate">Earlier observation</figcaption></figure>
         <figure><img id="unregisteredAfter" alt="Later satellite image, alignment not verified"><figcaption id="unregisteredAfterDate">Later observation</figcaption></figure>
@@ -136,10 +136,16 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
    <p id="canvasStatus" role="status">No satellite image selected.</p>
    <div class="canvas-footer">
      <button type="button" id="highlightBtn" aria-pressed="false" disabled>Show change regions</button>
-     <p id="changeSummary" class="muted">Differences use an untrained RGB comparison, not a validated AI detector.</p>
+     <p id="changeSummary" class="muted">Experimental RGB evidence; not a validated construction classifier.</p>
    </div>
    <section id="changeEvents" class="change-events" aria-label="Unverified visual change regions" hidden>
-    <div class="change-events-heading"><h3>Change regions</h3><span id="changeEventsCount"></span></div>
+    <div class="change-events-heading"><h3>Change evidence</h3><span id="changeEventsCount"></span></div>
+    <div class="change-tools" role="group" aria-label="Change Intelligence review options">
+     <button type="button" id="shadowToggle" aria-pressed="false" title="Include brightness-only changes that resemble shadows">Include shadow-like</button>
+     <button type="button" id="inspectNDVI" title="Read real Sentinel-2 B04 and B08 reflectance bands for both dates">Analyze NDVI</button>
+     <button type="button" id="checkPersistence" title="Compare the selected baseline with a usable later observation">Check later date</button>
+    </div>
+    <p id="changeEvidenceStatus" class="muted small" role="status">Candidates are not verified ground changes.</p>
     <div id="changeEventsList" class="change-events-list"></div>
    </section>
   </section>
