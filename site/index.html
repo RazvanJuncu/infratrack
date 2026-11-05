@@ -122,7 +122,8 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
      <img id="canvasNew" alt="Later selected Sentinel satellite image" hidden>
      <div id="canvasDivider" hidden></div>
      <div id="canvasLabels" hidden><span id="labelOld" class="chip left">BEFORE</span><span id="labelNew" class="chip right">AFTER</span></div>
-     <canvas id="changeLayer" hidden aria-label="Experimental cloud-masked and geometrically aligned visual difference highlight"></canvas>
+     <canvas id="changeLayer" hidden aria-label="Unverified grouped RGB changes"></canvas>
+     <div id="regionFocus" hidden aria-hidden="true"></div>
      <div id="unregisteredPair" hidden aria-label="Unregistered source images displayed side-by-side">
         <figure><img id="unregisteredBefore" alt="Earlier satellite image, alignment not verified"><figcaption id="unregisteredBeforeDate">Earlier observation</figcaption></figure>
         <figure><img id="unregisteredAfter" alt="Later satellite image, alignment not verified"><figcaption id="unregisteredAfterDate">Later observation</figcaption></figure>
@@ -134,9 +135,13 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
    <p id="alignmentState" class="unverified" role="status">Geometric alignment has not been checked.</p>
    <p id="canvasStatus" role="status">No satellite image selected.</p>
    <div class="canvas-footer">
-     <button type="button" id="highlightBtn" aria-pressed="false" disabled>Show differences</button>
+     <button type="button" id="highlightBtn" aria-pressed="false" disabled>Show change regions</button>
      <p id="changeSummary" class="muted">Differences use an untrained RGB comparison, not a validated AI detector.</p>
    </div>
+   <section id="changeEvents" class="change-events" aria-label="Unverified visual change regions" hidden>
+    <div class="change-events-heading"><h3>Change regions</h3><span id="changeEventsCount"></span></div>
+    <div id="changeEventsList" class="change-events-list"></div>
+   </section>
   </section>
  </section>
  <aside class="panel timeline" aria-label="Satellite observation timeline">
@@ -171,5 +176,7 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
 <script src="custom_preview.js"></script>
 <script src="monitor_workspace_core.js"></script>
 <script src="image_registration.js"></script>
+<script src="registration_v2.js"></script>
+<script src="change_intelligence.js"></script>
 <script src="monitor_workspace.js"></script>
 </body></html>
