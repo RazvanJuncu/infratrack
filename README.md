@@ -211,3 +211,37 @@ Two levels of comparison are intentionally separate:
 This addresses a concrete reprojection design flaw but does not prove the
 accuracy of any real-world scene without verifying original source
 georeferencing and evaluating geographically independent ground truth.
+
+
+## Change Intelligence 1.1 — source-aware candidate review (experimental)
+The Monitor adds an **optional shadow-like RGB suppression heuristic** to reduce
+some false positives caused by strong, nearly chromaticity-preserving illumination
+changes. The user can restore those signals with *Include shadow-like*. This
+heuristic can also suppress real dark-surface changes: neither filtered nor
+unfiltered results are verified construction events. Pixel candidates remain
+cloud screened and require accepted residual co-registration.
+
+Selecting a candidate draws its **actual pixel boundary** in Sand, rather
+than a misleading rectangular bounding box. The listing still reports pixel
+counts, not land area; the RGB overlay stays an untrained visual signal.
+
+Two explicit, optional evidence checks are available:
+- **Analyze NDVI** loads the STAC-linked original Sentinel-2 Red B04 (10 m)
+  and NIR B08 (10 m) reflectance COGs for the **exact two selected scenes**.
+  It uses each asset's own `raster:bands` scale/offset, preserves 16-bit
+  measurements during geographic regridding, masks nodata, and warps the later
+  NDVI field only with the previously accepted image registration. It reports
+  per-region mean NDVI change when at least half the region has valid samples.
+  NDVI change is vegetation evidence, not construction classification. If a
+  source, calibration, geometry, or clear coverage is missing, the analysis
+  returns unavailable instead of manufacturing an index.
+- **Check later date** loads up to three real, later acquisitions from the
+  current observed STAC timeline, screening clouds. It aligns a later image
+  against the original baseline and checks whether the same *RGB candidate
+  pixels* remain above a heuristic threshold. A later signal may be due to
+  crop changes or illumination. Insufficient coverage or geometric uncertainty
+  produces an explicit unavailable result; there is no alert service.
+
+These are **research-stage heuristics**. No ground-truth precision or recall
+is claimed, no AI construction classifier has been trained, and no permanent
+change event or construction progress percentage is inferred.
