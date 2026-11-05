@@ -320,3 +320,26 @@ UTC, with clear **year and month separators**. Whole-scene cloud coverage
 uses a cloud symbol plus a compact percentage; tooltips/ARIA preserve the
 full meaning. ISO acquisition strings are retained internally to ensure
 sorting, exact source selection, and timestamp comparisons stay correct.
+
+
+## Reversible Liquid Glass design experiment (November 2026)
+The production Carbon / Sand experience now has a **visual-only** Glass finish,
+implemented as `site/liquid_glass.css` and `site/ui_finish.js`. Glass adds
+blurred charcoal panes, reflective borders, internal top highlights, satin-gold
+embossed primary actions and elevated secondary pill controls while keeping
+all real Sentinel-2 source rasters, registration outputs, NDVI and cloud masks
+untouched. It is enabled by default but does **not** use AI-generated satellite
+imagery or synthetic map overlays.
+
+A small **✦ Glass / Classic** button appears in the top navigation of
+Overview, Monitor, Training, and Technical. Pressing it instantly swaps
+between the experiment and the previous classic Carbon / Sand design without
+changing routes or reloading observations. It persists in the browser-only
+`infratrack:ui-finish:v1` key, independent of watchlist storage; failure to
+store the preference is harmless.
+
+To *disable without code changes*, choose **Classic**. To fully revert the
+experiment in GitHub, revert the commit introducing the shared stylesheet,
+script, and page links (including the corresponding tests). The pre-experiment
+head was `f1b1832dd72b38bdd221df801e65c8e83d9227da`; avoid resetting
+the branch to this old SHA if subsequent independent work has landed.
