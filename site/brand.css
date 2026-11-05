@@ -220,3 +220,17 @@ body #changeEvidenceStatus{font-size:11px;margin:0 0 10px;line-height:1.5}
 body #changeEventsList .change-event{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:10px 4px!important;min-height:58px}
 body #changeEventsList .change-event .change-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 body #changeEventsList .change-event .change-evidence{color:#C4AC8E;font:10px/1.5 var(--brand-mono);text-align:left}
+
+/* Region Inspector 1.2: one evidence sheet, no nested dashboard cards */
+body #canvasViewport[data-region-inspection="ready"]{cursor:crosshair}
+body .region-inspector{border-top:1px solid var(--border);margin-top:16px;padding-top:14px;display:grid;gap:8px}
+body .region-inspector-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font:11px var(--brand-mono);color:var(--muted)}
+body #regionInspectorEvidence{color:var(--brand-sand);font-size:10px}
+body #regionInspectorHypothesis{font-size:17px!important;letter-spacing:-.025em;margin:2px 0 0;color:var(--brand-ivory)}
+body #regionInspectorWhy{font-size:12px;line-height:1.55;color:var(--text)}
+body #regionInspectorAlternative{font-size:11px;line-height:1.5;margin:0}
+body .region-inspector-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin-top:5px}
+body .region-inspector-facts span{border-top:1px solid var(--border);padding:9px 0;font:10px/1.5 var(--brand-mono);color:var(--muted)}
+body .region-inspector-note{font-size:10px;color:#C2A889;margin-top:2px}
+body .change-event[aria-pressed="true"] strong{color:var(--brand-sand)}
+@media(max-width:700px){body .region-inspector-facts{grid-template-columns:1fr}}
