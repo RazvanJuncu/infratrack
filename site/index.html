@@ -147,6 +147,17 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
     </div>
     <p id="changeEvidenceStatus" class="muted small" role="status">Candidates are not verified ground changes.</p>
     <div id="changeEventsList" class="change-events-list"></div>
+    <section id="regionInspector" class="region-inspector" aria-label="Selected region interpretation" aria-live="polite" hidden>
+     <div class="region-inspector-head">
+      <span id="regionInspectorIndex">Region</span>
+      <span id="regionInspectorEvidence">RGB evidence only</span>
+     </div>
+     <h3 id="regionInspectorHypothesis">Unclassified change</h3>
+     <p id="regionInspectorWhy"></p>
+     <p id="regionInspectorAlternative" class="muted small"></p>
+     <div id="regionInspectorFacts" class="region-inspector-facts"></div>
+     <p class="region-inspector-note">Research-stage hypothesis, not a verified detection or AI confidence score.</p>
+    </section>
    </section>
   </section>
  </section>
@@ -184,5 +195,6 @@ footer{font-size:11px;color:#8ea6b0;margin-top:24px}
 <script src="image_registration.js"></script>
 <script src="registration_v2.js"></script>
 <script src="change_intelligence.js"></script>
+<script src="region_inspector.js"></script>
 <script src="monitor_workspace.js"></script>
 </body></html>
