@@ -281,3 +281,42 @@ validated on independent, labeled change/no-change imagery.
 
 Sentinel-2 SCL reference:
 https://documentation.v1.dataspace.copernicus.eu/APIs/SentinelHub/Data/S2L2A.html
+
+
+## Map-first Overview and acquisition timeline (2026-11-05)
+The application's default route, `site/index.html`, is now an interactive
+aerial **Overview** of the registered studies and personal areas saved on the
+same browser origin. Their exact published study-window coordinates are used
+to draw 2 km bounds. A marker, footprint or area-list click focuses the map
+and opens the right-hand area preview. The original Sentinel-2 comparison
+workspace is preserved at `site/monitor.html?site=<area-id>`; training and
+technical diagnostics remain separate routes.
+
+**The overview basemap is not a dated Sentinel-2 observation.** It uses
+Esri World Imagery for geographic orientation, with its map-service attribution
+visible in Leaflet. A Streets toggle and tile-error fallback use the
+OpenStreetMap tile server under its own usage terms. Basemap access and terms
+must be reviewed before any large-scale/commercial deployment.
+
+A preview is generated **only after the user selects an area**. It searches
+the actual Element84 Sentinel-2 L2A Earth Search catalog over the last 365
+days, filters extreme whole-scene clouds, then checks up to eight newest
+candidate image COGs in chronological order using the *local* Sentinel-2 SCL
+mask. A preview is displayed only if at least 65% of the 2 km crop is in the
+trusted surface classes (4, 5 or 6). The acquisition date, local clear
+fraction and whole-scene cloud figure are displayed separately. When no crop
+is verified, the UI explicitly reports missing data; the area's Monitor route
+remains accessible for manual date selection. The app does not claim this is
+the globally latest image beyond the checked candidates.
+
+Users can also enter **Add location** mode, click the overview map to
+choose a European 2 km study square, enter a name and area type, and save to
+the existing `infratrack:watchlist:v1` localStorage key. These personal
+locations persist **only within the same browser/device**, not in GitHub
+backend monitoring. No automatic scans are promised for personal locations.
+
+The Monitor timeline now formats acquisition dates as `13 Dec 2026` in
+UTC, with clear **year and month separators**. Whole-scene cloud coverage
+uses a cloud symbol plus a compact percentage; tooltips/ARIA preserve the
+full meaning. ISO acquisition strings are retained internally to ensure
+sorting, exact source selection, and timestamp comparisons stay correct.
