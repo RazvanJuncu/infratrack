@@ -22,6 +22,7 @@ let cached=new Map(),inflight=new Map();
 let chosenMapPoint=null,leafletMap=null,leafletRect=null;
 let catalogSeq=0,viewSeq=0,activeToken=null;
 let highlighted=false,loadedPair=null,latestBusy=false,highlightRevision=0;
+let shadowIncluded=false,activeChange=null,ndviEvidence=null,laterEvidence=null,laterDate=null;
 let lastTap=null;
 function status(message){$("canvasStatus").textContent=message}
 function alignmentMessage(text,accepted=false){
@@ -277,6 +278,13 @@ function attachDrops(){
    $("highlightBtn").setAttribute("aria-pressed",String(highlighted));
    applyHighlight();
  };
+ $("shadowToggle").onclick=()=>{
+   shadowIncluded=!shadowIncluded;
+   $("shadowToggle").setAttribute("aria-pressed",String(shadowIncluded));
+   applyHighlight();
+ };
+ $("inspectNDVI").onclick=inspectNDVI;
+ $("checkPersistence").onclick=checkLaterDate;
 }
 async function cropScene(item,token,allowCloudy=true){
  if(!current||!item)throw Error("Missing area or original satellite acquisition");
@@ -313,36 +321,126 @@ function decodePreviewPixels(dataUrl,width,height){
  });
 }
 function resetChangeRegions(){
+ activeChange=null;ndviEvidence=null;laterEvidence=null;laterDate=null;
  $("changeEvents").hidden=true;
  $("changeEventsList").replaceChildren();
  $("regionFocus").hidden=true;
+ $("changeEvidenceStatus").textContent="Candidates are unverified visual signals.";
+}
+function laterCandidates(){
+ const selected=core.pairFrom(slots,sceneIndex);
+ if(selected.length!==2)return [];
+ return scenes.filter(x=>dayText(x)>dayText(selected[1])&&
+  sceneUrl(x)&&(core.sceneCloud(x)===null||core.sceneCloud(x)<70))
+  .sort((a,b)=>dayText(a).localeCompare(dayText(b)));
 }
 function showChangeRegions(result,w,h){
+ activeChange=result;
  const list=$("changeEventsList"),focus=$("regionFocus");
  list.replaceChildren();focus.hidden=true;
  $("changeEvents").hidden=false;
- $("changeEventsCount").textContent=result.totalRegions+" regions · unverified";
+ $("changeEventsCount").textContent=result.totalRegions+
+   (result.totalRegions===1?" region":" regions")+" · unverified";
+ $("shadowToggle").setAttribute("aria-pressed",String(shadowIncluded));
+ $("inspectNDVI").disabled=!result.regions.length;
+ $("checkPersistence").disabled=!result.regions.length||laterCandidates().length===0;
  if(!result.totalRegions){
-  list.append(node("p","No coherent candidate regions in the selected clear pixels.","muted small"));
+  list.append(node("p","No coherent candidate regions in clear, aligned imagery.","muted small"));
+  $("changeEvidenceStatus").textContent=result.shadowLikePixels+
+   " shadow-like candidate pixels filtered; no confirmed ground changes.";
   return;
  }
+ const spectral=new Map((ndviEvidence||[]).map(x=>[x.id,x]));
+ const temporal=new Map((laterEvidence||[]).map(x=>[x.id,x]));
  result.regions.forEach((region,i)=>{
   const item=node("button",undefined,"change-event");
-  item.type="button";
-  item.append(node("strong","Region "+(i+1)),
+  item.type="button";item.setAttribute("aria-pressed","false");
+  const top=node("span",undefined,"change-row");
+  top.append(node("strong","Region "+(i+1)),
    node("span",region.pixels+" image px · RGB Δ "+region.meanDelta,"muted small"));
-  item.setAttribute("aria-pressed","false");
+  item.append(top);
+  const info=[];
+  const ndvi=spectral.get(region.id),later=temporal.get(region.id);
+  if(ndvi)info.push(ndvi.status==="measured"?
+    "NDVI Δ "+(ndvi.delta>=0?"+":"")+ndvi.delta.toFixed(3)+" · "+ndvi.signal:
+    "NDVI: insufficient clear reflectance");
+  if(later)info.push(later.status==="signal_still_visible"?
+    "RGB signal also observed "+laterDate:
+    later.status==="not_correlated"?"RGB signal not corroborated "+laterDate:
+    "Later date: insufficient clear pixels");
+  if(info.length)item.append(node("span",info.join(" | "),"change-evidence"));
   item.onclick=()=>{
-   Array.from(list.children).forEach(el=>el.setAttribute("aria-pressed","false"));
+   for(const other of list.children)other.setAttribute("aria-pressed","false");
    item.setAttribute("aria-pressed","true");
-   focus.style.left=(region.bbox.x/w*100)+"%";
-   focus.style.top=(region.bbox.y/h*100)+"%";
-   focus.style.width=(region.bbox.width/w*100)+"%";
-   focus.style.height=(region.bbox.height/h*100)+"%";
+   focus.width=w;focus.height=h;
+   const ctx=focus.getContext("2d");
+   if(!ctx){focus.hidden=true;return}
+   const bitmap=ctx.createImageData(w,h);
+   bitmap.data.set(changeEngine.outline(result.labels,w,h,region.id));
+   ctx.putImageData(bitmap,0,0);
    focus.hidden=false;
   };
   list.append(item);
  });
+}
+async function inspectNDVI(){
+ const result=activeChange,pair=loadedPair,token=activeToken,request=viewSeq,area=current;
+ if(!result||!pair||pair.length!==2||!area)return;
+ const scenesNow=core.pairFrom(slots,sceneIndex);
+ if(scenesNow.length!==2||!pair[1].registration)return;
+ const button=$("inspectNDVI");button.disabled=true;
+ $("changeEvidenceStatus").textContent="Reading real B04 and B08 reflectance for both dates…";
+ try{
+  const [a,b]=await Promise.all(scenesNow.map(item=>preview.readNDVI(item,area,{signal:token})));
+  if(token?.aborted||request!==viewSeq||activeChange!==result||loadedPair!==pair)return;
+  const aligned=changeEngine.warpScalar(b.ndvi,pair[0].width,pair[0].height,pair[1].registration);
+  ndviEvidence=changeEngine.summarizeNDVI(result.regions,result.labels,a.ndvi,aligned);
+  showChangeRegions(result,pair[0].width,pair[0].height);
+  $("changeEvidenceStatus").textContent="NDVI from exact B04/B08 reflectance dates; vegetation-index shifts are NOT construction classifications.";
+ }catch(err){
+  if(request===viewSeq&&activeChange===result)
+   $("changeEvidenceStatus").textContent="NDVI unavailable: "+(err?.message||"unknown source error");
+ }finally{
+  if(request===viewSeq&&activeChange===result)button.disabled=false;
+ }
+}
+async function checkLaterDate(){
+ const result=activeChange,pair=loadedPair,token=activeToken,request=viewSeq;
+ if(!result||!pair||pair.length!==2)return;
+ const candidates=laterCandidates().slice(0,3),button=$("checkPersistence");
+ if(!candidates.length)return;
+ button.disabled=true;
+ $("changeEvidenceStatus").textContent="Checking a later cloud-screened Sentinel observation…";
+ const errors=[];
+ try{
+  for(const candidate of candidates){
+   if(token?.aborted||request!==viewSeq||activeChange!==result)return;
+   try{
+    const next=await cropScene(candidate,token,false);
+    if(next.cloudFraction===null||next.cloudFraction<.65)
+     throw Error("Insufficient local clear coverage");
+    const aligned=await alignScenes(pair[0],next);
+    if(token?.aborted||request!==viewSeq||activeChange!==result)return;
+    const w=pair[0].width,h=pair[0].height;
+    const later=changeEngine.segment(aligned.old.rgba,aligned.newest.rgba,w,h,
+     aligned.old.cloudMask,aligned.newest.cloudMask,
+     {includeShadowLike:shadowIncluded});
+    const clear=new Uint8Array(w*h);
+    for(let p=0;p<clear.length;p++)
+     clear[p]=(aligned.old.cloudMask[p]===1&&aligned.newest.cloudMask[p]===1)?1:0;
+    laterEvidence=changeEngine.persistence(result.regions,result.labels,later,clear);
+    laterDate=dayText(candidate);
+    showChangeRegions(result,w,h);
+    $("changeEvidenceStatus").textContent="Compared with "+laterDate+
+      " on verified image geometry. Repeated RGB signals are not confirmed land-use changes.";
+    return;
+   }catch(err){errors.push(dayText(candidate)+": "+(err?.message||"unavailable"))}
+  }
+  if(request===viewSeq&&activeChange===result)
+   $("changeEvidenceStatus").textContent="Could not validate a later scene: "+errors.join(" | ").slice(0,220);
+ }finally{
+  if(request===viewSeq&&activeChange===result)button.disabled=false;
+ }
 }
 async function applyHighlight(){
  const button=$("highlightBtn"),layer=$("changeLayer");
@@ -371,7 +469,8 @@ async function applyHighlight(){
       before.cloudMask.length!==w*h||after.cloudMask.length!==w*h)
      throw Error("Cannot highlight changes without both valid local cloud masks");
    const diff=changeEngine.segment(
-     oldBytes,newBytes,w,h,before.cloudMask,after.cloudMask);
+     oldBytes,newBytes,w,h,before.cloudMask,after.cloudMask,
+     {includeShadowLike:shadowIncluded});
    layer.width=before.width;layer.height=before.height;
    const ctx=layer.getContext("2d");
    if(!ctx)throw Error("Canvas rendering unavailable");
@@ -381,9 +480,9 @@ async function applyHighlight(){
    showChangeRegions(diff,w,h);
    $("changeSummary").textContent=diff.validPixels===0?
      "Insufficient locally clear comparable pixels.":
-     diff.candidatePixels+" image pixels in "+diff.totalRegions+
-     " coherent unverified regions · RGB threshold "+diff.threshold+
-     ". Crop cycles, lighting and residual misalignment can cause false differences.";
+     diff.candidatePixels+" candidate image pixels in "+diff.totalRegions+
+     " regions · "+diff.shadowLikePixels+" shadow-like pixels filtered · RGB threshold "+
+     diff.threshold+". Unverified; seasons and misalignment can cause false positives.";
  }catch(err){
    if(revision!==highlightRevision||!highlighted||loadedPair!==pair)return;
    layer.hidden=true;resetChangeRegions();
@@ -424,7 +523,7 @@ async function alignScenes(first,second){
  return {
    old:{...first,rgba:a},
    newest:{...second,rgba:warp.rgba,cloudMask:warp.mask,
-       image:encodeRGBA(warp.rgba,w,h)},
+       image:encodeRGBA(warp.rgba,w,h),registration:result},
    quality:result
  };
 }
