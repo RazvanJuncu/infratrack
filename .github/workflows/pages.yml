@@ -25,7 +25,7 @@ jobs:
       - name: Run deterministic tests
         run: python -m unittest discover -s tests -v
       - name: Test browser review, European watchlist and recent training
-        run: node --test tests/test_quick_label.cjs tests/test_monitor_ui.cjs tests/test_technical_ui.cjs tests/test_workspace_ui.cjs tests/test_registration_ui.cjs tests/test_brand_ui.cjs tests/test_change_intelligence.cjs
+        run: node --test tests/test_quick_label.cjs tests/test_monitor_ui.cjs tests/test_technical_ui.cjs tests/test_workspace_ui.cjs tests/test_registration_ui.cjs tests/test_brand_ui.cjs tests/test_change_intelligence.cjs tests/test_common_geographic_grid.cjs
       - name: Resolve mapped corridor and analyze real Sentinel-2
         shell: bash
         run: |
