@@ -85,3 +85,44 @@ test('NDVI reads B04/B08 reflectance scale and offset from STAC',async()=>{
  assert.match(monitor,/changeEngine\.persistence\(/);
  assert.match(monitor,/changeEngine\.outline\(/);
 });
+
+test('real NDVI raster reader applies STAC scale/offset and retains source precision',async()=>{
+ const priorGeo=globalThis.GeoTIFF,priorProj=globalThis.proj4;
+ function proj(from,to,p){
+  if(from!=='EPSG:4326')throw Error('Unexpected mock reprojection');
+  return [500000+(p[0]-26)*79000,5000000+(p[1]-45)*111000];
+ }
+ proj.defs=()=>{};
+ globalThis.proj4=proj;
+ globalThis.GeoTIFF={fromUrl:async url=>({
+  getImage:async()=>({
+   getOrigin:()=>[0,6000000],getResolution:()=>[10,-10],
+   getWidth:()=>1000000,getHeight:()=>1000000
+  }),
+  readRasters:async({width,height})=>
+   new Uint16Array(width*height).fill(url.includes('nir')?5000:3000)
+ })};
+ try{
+  const item={
+   id:'independent-scene-123',
+   properties:{datetime:'2026-10-21T10:00:00Z','proj:epsg':32635},
+   assets:{
+    red:{href:'https://example.test/red.tif',
+      'raster:bands':[{scale:0.0001,offset:-0.1}]},
+    nir:{href:'https://example.test/nir.tif',
+      'raster:bands':[{scale:0.0001,offset:-0.1}]}
+   }
+  };
+  const result=await preview.readNDVI(item,{lat:45,lon:26,size_km:2});
+  assert.equal(result.valid,256*256);
+  assert.ok(Math.abs(result.ndvi[1536]-1/3)<.001);
+  assert.equal(result.sceneId,item.id);
+  const missing={...item,assets:{...item.assets,nir:{
+   href:'https://example.test/nir.tif'}}};
+  await assert.rejects(()=>preview.readNDVI(missing,{lat:45,lon:26,size_km:2}),
+   /scale\/offset metadata/);
+ }finally{
+  globalThis.GeoTIFF=priorGeo;
+  globalThis.proj4=priorProj;
+ }
+});
