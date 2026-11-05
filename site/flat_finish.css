@@ -1,0 +1,157 @@
+/*
+ * InfraTrack Flat Finish — carbon / sand.
+ * Matte surfaces, restrained depth and high legibility.
+ * Visual-only; the satellite imagery, map tiles and algorithms are unchanged.
+ */
+:root{
+ --flat-panel-shadow:0 8px 24px rgba(5,10,11,.23),0 2px 6px rgba(5,10,11,.13);
+ --flat-control-shadow:0 2px 5px rgba(6,9,10,.18);
+ --flat-border:#3B4445;
+}
+body header,
+body nav{
+ background:#1B2022!important;
+ border-color:#394143!important;
+ box-shadow:none!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+}
+body.overview-page header{border-radius:0!important}
+body .panel,
+body .metric-card,
+body .head,
+body.overview-page .overview-rail,
+body.overview-page .overview-detail,
+body #addDialog .dialog{
+ background:#202629!important;
+ background-image:none!important;
+ border:1px solid var(--flat-border)!important;
+ border-radius:0!important;
+ box-shadow:var(--flat-panel-shadow)!important;
+ -webkit-backdrop-filter:none!important;
+ backdrop-filter:none!important;
+}
+body.overview-page .overview-rail,
+body.overview-page .overview-detail{
+ background:rgba(28,34,36,.97)!important;
+ border-color:#40494A!important;
+}
+body nav .tabs a{
+ background:transparent!important;
+ color:#B5BCB8!important;
+ border:1px solid transparent!important;
+ border-radius:999px!important;
+ box-shadow:none!important;
+ text-shadow:none!important;
+ transform:none!important;
+}
+body nav .tabs a:hover{
+ background:#2C3435!important;
+ color:#F2F0EA!important;
+}
+body nav .tabs a[aria-current="page"]{
+ background:#D49A58!important;
+ border-color:#D49A58!important;
+ color:#1E2325!important;
+ box-shadow:0 1px 3px rgba(0,0,0,.18)!important;
+}
+body button:not(.scene-card):not(.overview-area),
+body .button,
+body .map-return,
+body.overview-page .overview-tools button,
+body.overview-page .workspace-link{
+ background:#2A3234!important;
+ background-image:none!important;
+ border:1px solid #4C5657!important;
+ border-radius:999px!important;
+ color:#E8E9E5!important;
+ text-shadow:none!important;
+ box-shadow:var(--flat-control-shadow)!important;
+ transform:none!important;
+ -webkit-backdrop-filter:none!important;
+ backdrop-filter:none!important;
+ transition:background-color .16s ease,border-color .16s ease,color .16s ease!important;
+}
+body button:not(.scene-card):not(.overview-area):hover,
+body .button:hover,
+body.overview-page .overview-tools button:hover{
+ background:#323B3D!important;
+ border-color:#6B7775!important;
+ transform:none!important;
+ filter:none!important;
+}
+body button:active{transform:none!important}
+body button.primary,
+body .primary,
+body .btn-primary,
+body.overview-page #addAreaMap,
+body.overview-page #saveNewArea,
+body.overview-page .workspace-link{
+ background:#D49A58!important;
+ background-image:none!important;
+ color:#1D2224!important;
+ border:1px solid #D49A58!important;
+ font-weight:650!important;
+ box-shadow:0 2px 7px rgba(7,9,9,.24)!important;
+ text-shadow:none!important;
+}
+body button.primary:hover,
+body.overview-page #addAreaMap:hover,
+body.overview-page #saveNewArea:hover,
+body.overview-page .workspace-link:hover{
+ background:#E1AA6A!important;
+ border-color:#E1AA6A!important;
+ filter:none!important;
+}
+body.overview-page .overview-area{
+ background:transparent!important;
+ background-image:none!important;
+ border:0!important;
+ border-top:1px solid #394143!important;
+ border-left:2px solid transparent!important;
+ border-radius:0!important;
+ box-shadow:none!important;
+ transform:none!important;
+}
+body.overview-page .overview-area:hover{background:#2A3133!important}
+body.overview-page .overview-area.active{
+ background:#302D28!important;
+ border-left-color:#D49A58!important;
+}
+body .scene-card,
+body #changeEventsList button{
+ background:transparent!important;
+ background-image:none!important;
+ box-shadow:none!important;
+}
+body .scene-card.chosen{
+ background:#302D28!important;
+ border-color:#D49A58!important;
+}
+body .source-slot,
+body input:not([type="range"]),
+body select,
+body textarea{
+ background:#252C2E!important;
+ background-image:none!important;
+ border:1px solid #4B5556!important;
+ box-shadow:none!important;
+ color:#E8E9E5!important;
+}
+body #canvasViewport img,
+body #canvasViewport canvas,
+body.overview-page .preview-container img{
+ filter:none!important;
+}
+body.overview-page .preview-container{
+ background:#151B1D!important;
+ border:1px solid #465052!important;
+ box-shadow:none!important;
+}
+body button:focus-visible,body a:focus-visible{
+ outline:2px solid #E0A460!important;
+ outline-offset:3px;
+}
+@media(prefers-reduced-motion:reduce){
+ body button,body a,body .overview-area{transition:none!important}
+}
