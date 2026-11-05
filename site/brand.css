@@ -198,3 +198,16 @@ body .personal-line{border-color:var(--border)!important}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
 }
+
+/* InfraTrack 1.0: change-region results without nested cards */
+body #regionFocus{position:absolute;z-index:9;pointer-events:none;border:2px solid var(--brand-sand);box-shadow:0 0 0 1px #15191C80}
+body .change-events{margin-top:14px;padding-top:13px;border-top:1px solid var(--border)}
+body .change-events-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:5px}
+body .change-events-heading h3{font-size:13px!important;margin:0}
+body #changeEventsCount{font:10px var(--brand-mono);color:var(--muted)}
+body .change-events-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+body #changeEventsList button{display:flex;justify-content:space-between;align-items:baseline;gap:8px;border:0!important;border-bottom:1px solid var(--border)!important;border-radius:0!important;background:transparent!important;text-align:left;padding:10px 2px!important}
+body #changeEventsList button:hover,body #changeEventsList button[aria-pressed="true"]{color:var(--brand-sand)!important;background:#2B2B28!important}
+body .change-event strong{font-size:12px;font-weight:600!important}
+body .change-event span{font-size:10px;text-align:right}
+@media(max-width:700px){body .change-events-list{grid-template-columns:1fr}}
