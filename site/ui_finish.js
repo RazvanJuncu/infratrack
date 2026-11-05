@@ -17,6 +17,9 @@ function setFinish(value,storage,element){
  try{storage?.setItem(KEY,next)}catch{}
  return next;
 }
+function safeStorage(){
+ try{return root.localStorage}catch{return null}
+}
 function labelFor(value){
  return value==="glass"?"Glass":"Classic";
 }
@@ -45,13 +48,13 @@ function insertToggle(){
  }
  button.addEventListener("click",()=>{
   const current=document.documentElement.getAttribute(ATTRIBUTE);
-  setFinish(current==="glass"?"classic":"glass",root.localStorage,document.documentElement);
+  setFinish(current==="glass"?"classic":"glass",safeStorage(),document.documentElement);
   render();
  });
  nav.append(button);
  render();
 }
-const current=readFinish(root.localStorage);
+const current=readFinish(safeStorage());
 if(typeof document!=="undefined")document.documentElement.setAttribute(ATTRIBUTE,current);
 if(typeof module==="object"&&module.exports)
  module.exports={KEY,readFinish,setFinish,labelFor};
