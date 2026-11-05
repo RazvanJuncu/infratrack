@@ -339,6 +339,43 @@ function laterCandidates(){
   sceneUrl(x)&&(core.sceneCloud(x)===null||core.sceneCloud(x)<70))
   .sort((a,b)=>dayText(a).localeCompare(dayText(b)));
 }
+function inspectRegion(result,region,w,h){
+ const pair=loadedPair;
+ if(!pair||!pair[0]||!pair[1]||!result)return;
+ const qa=regionInspectorEngine.regionQuality(result,region,w,h,
+  pair[0].rgba,pair[1].rgba,pair[0].sclClasses,pair[1].sclClasses);
+ const spectral=(ndviEvidence||[]).find(x=>x.id===region.id)||null;
+ const temporal=(laterEvidence||[]).find(x=>x.id===region.id)||null;
+ const detail=regionInspectorEngine.interpretRegion(region,qa,spectral,temporal);
+ $("regionInspectorIndex").textContent="REGION "+
+  String(result.regions.findIndex(x=>x.id===region.id)+1).padStart(2,"0");
+ $("regionInspectorEvidence").textContent=detail.evidenceLevel;
+ $("regionInspectorHypothesis").textContent=detail.hypothesis;
+ $("regionInspectorWhy").textContent=detail.rationale;
+ $("regionInspectorAlternative").textContent=detail.alternative;
+ const facts=$("regionInspectorFacts");facts.replaceChildren();
+ for(const fact of detail.facts)facts.append(node("span",fact));
+ $("regionInspector").hidden=false;
+}
+function selectChangeRegion(result,id,w,h,autoSpectral=true){
+ const region=result.regions.find(x=>x.id===id);
+ if(!region||activeChange!==result)return;
+ selectedRegionId=id;
+ const list=$("changeEventsList"),focus=$("regionFocus");
+ for(const item of list.children)
+  item.setAttribute("aria-pressed",String(Number(item.getAttribute("data-region-id"))===id));
+ focus.width=w;focus.height=h;
+ const ctx=focus.getContext("2d");
+ if(ctx){
+  const bitmap=ctx.createImageData(w,h);
+  bitmap.data.set(changeEngine.outline(result.labels,w,h,id));
+  ctx.putImageData(bitmap,0,0);focus.hidden=false;
+ }else focus.hidden=true;
+ inspectRegion(result,region,w,h);
+ if(autoSpectral&&!autoNDVIRequested&&!ndviEvidence){
+  autoNDVIRequested=true;void inspectNDVI();
+ }
+}
 function showChangeRegions(result,w,h){
  activeChange=result;
  const list=$("changeEventsList"),focus=$("regionFocus");
@@ -360,6 +397,7 @@ function showChangeRegions(result,w,h){
  result.regions.forEach((region,i)=>{
   const item=node("button",undefined,"change-event");
   item.type="button";item.setAttribute("aria-pressed","false");
+  item.setAttribute("data-region-id",String(region.id));
   const top=node("span",undefined,"change-row");
   top.append(node("strong","Region "+(i+1)),
    node("span",region.pixels+" image px · RGB Δ "+region.meanDelta,"muted small"));
@@ -374,19 +412,12 @@ function showChangeRegions(result,w,h){
     later.status==="not_correlated"?"RGB signal not corroborated "+laterDate:
     "Later date: insufficient clear pixels");
   if(info.length)item.append(node("span",info.join(" | "),"change-evidence"));
-  item.onclick=()=>{
-   for(const other of list.children)other.setAttribute("aria-pressed","false");
-   item.setAttribute("aria-pressed","true");
-   focus.width=w;focus.height=h;
-   const ctx=focus.getContext("2d");
-   if(!ctx){focus.hidden=true;return}
-   const bitmap=ctx.createImageData(w,h);
-   bitmap.data.set(changeEngine.outline(result.labels,w,h,region.id));
-   ctx.putImageData(bitmap,0,0);
-   focus.hidden=false;
-  };
+  item.onclick=()=>selectChangeRegion(result,region.id,w,h);
   list.append(item);
  });
+ $("canvasViewport").setAttribute("data-region-inspection","ready");
+ if(selectedRegionId&&result.regions.some(x=>x.id===selectedRegionId))
+  selectChangeRegion(result,selectedRegionId,w,h,false);
 }
 async function inspectNDVI(){
  const result=activeChange,pair=loadedPair,token=activeToken,request=viewSeq,area=current;
