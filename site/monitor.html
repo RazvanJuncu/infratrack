@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InfraTrack · Area workspace</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{color-scheme:dark;--bg:#0d161d;--panel:#17252f;--panel2:#1d313b;--border:#304653;--text:#edf7f9;--muted:#a1b6c2;--teal:#58d3ba}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--text);background:var(--bg);font:14px/1.5 system-ui,Segoe UI,-apple-system,sans-serif}
+[hidden]{display:none!important}button,input,select{font:inherit}button{cursor:pointer;background:#233d48;color:var(--text);border:1px solid #476572;border-radius:9px;padding:9px 12px;font-weight:650}
+button:hover{background:#305260}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}button:disabled{opacity:.45;cursor:default}
+.primary{background:var(--teal);color:#062821;border-color:var(--teal);font-weight:800}.primary:hover{background:#7de8d2}
+header{background:#12212a;border-bottom:1px solid var(--border)}
+nav{min-height:67px;max-width:1480px;margin:auto;padding:12px 22px;display:flex;align-items:center;gap:25px}
+.brand{font-weight:850;font-size:22px;letter-spacing:-.8px;color:#fff;text-decoration:none}.brand span{color:var(--teal)}
+.tabs{display:flex;gap:8px;margin-left:auto}.tabs a{color:var(--muted);text-decoration:none;font-weight:700;padding:8px 13px;border-radius:8px}
+.tabs .active{background:#244940;color:white}
+main{max-width:1480px;margin:0 auto;padding:24px 20px 68px}
+h1{font-size:clamp(24px,3vw,33px);letter-spacing:-.9px;margin:0}h2{font-size:17px;letter-spacing:-.2px;margin:0}p{margin:0}
+.muted{color:var(--muted)}.small{font-size:12px}.eyebrow{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#7ad8c5;font-weight:750}
+.shell{display:grid;grid-template-columns:220px minmax(0,1fr) 235px;align-items:start;gap:16px;margin-top:17px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;min-width:0}
+.panel-title{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.zones-list{display:flex;flex-direction:column;gap:7px;padding:11px}
+.area{border:1px solid #334e59;background:#1b3039;text-align:left;width:100%;border-radius:8px;padding:12px}
+.area.active{background:#225047;border-color:var(--teal)}
+.area strong{display:block;font-size:13px}.area small{display:block;color:#a8bfca;font-size:11px;margin-top:4px}
+.area-add{width:calc(100% - 22px);margin:10px 11px 13px}
+.workspace{min-width:0}
+.head{background:var(--panel);border:1px solid var(--border);padding:16px;border-radius:12px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.head .desc{font-size:12px;color:var(--muted);margin:5px 0 0}
+#recentAlert{padding:10px 13px;background:#2b342e;border:1px solid #736348;border-radius:9px;color:#e9d5ad;font-size:12px;margin-bottom:13px}
+.canvas-panel{padding:16px}
+.canvas-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.canvas-heading .sub{font-size:12px;color:var(--muted)}
+#sourceSlots{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 12px}
+.source-slot{border:1px dashed #52737c;border-radius:9px;background:#1a303a;padding:9px;min-height:69px;display:flex;align-items:center;justify-content:space-between;gap:7px}
+.source-slot.over{background:#26594b;border-color:var(--teal)}
+.source-slot .meta{min-width:0}.source-slot strong{display:block;font-size:12px}.source-slot .meta small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.source-slot .handle{cursor:grab;display:block;max-width:100%;user-select:none}
+.source-slot .remove{padding:4px 8px;align-self:center;flex-shrink:0;font-size:14px}
+#canvasViewport{width:100%;background:#11242d;border:1px solid #2f4c54;border-radius:11px;aspect-ratio:1;position:relative;overflow:hidden;max-height:650px;min-height:300px}
+#canvasViewport.drag-over{border:2px solid var(--teal);background:#1a413c}
+#canvasViewport img{display:block;width:100%;height:100%;object-fit:fill;position:absolute;inset:0}
+#canvasViewport #canvasNew{clip-path:inset(0 50% 0 0)}
+#canvasViewport #canvasDivider{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#e6fff7;box-shadow:0 0 8px #06191c}
+#canvasViewport .chip{position:absolute;top:10px;padding:5px 8px;background:#081a21dc;border-radius:6px;font-size:11px;pointer-events:none}
+#canvasViewport .chip.left{left:10px}#canvasViewport .chip.right{right:10px}
+#canvasViewport #changeLayer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#canvasViewport #unregisteredPair{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:3px;background:#152a33}
+#unregisteredPair figure{margin:0;min-width:0;display:flex;flex-direction:column;justify-content:center}
+#unregisteredPair figure img{position:static;width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+#unregisteredPair figcaption{text-align:center;font-size:11px;color:#d8e6e7;padding:7px 3px}
+#alignmentState{font-size:12px;color:#8eddd0;margin-top:10px}
+#alignmentState.unverified{color:#f0bd83}
+#emptyCanvas{height:100%;padding:24px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:9px;color:#abc3c8}
+#emptyCanvas strong{font-size:18px;color:var(--text)}
+#canvasStatus{font-size:12px;color:#afdbd3;margin-top:10px;min-height:20px}
+#compareControls{display:flex;align-items:center;gap:12px;margin-top:10px}
+#compareControls input{width:100%;accent-color:var(--teal)}
+#compareControls span{white-space:nowrap;color:var(--muted);font-size:11px}
+.canvas-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:13px}
+#changeSummary{font-size:12px;color:#b5cabf;max-width:620px}
+#highlightBtn[aria-pressed="true"]{background:#774332;border-color:#e78e66}
+.timeline{display:flex;flex-direction:column;position:sticky;top:10px}
+.timeline .time-actions{padding:11px 13px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.timeline select{width:100%;background:#203a45;color:white;border:1px solid #56727d;border-radius:7px;padding:8px}
+#timelineScroll{height:min(75vh,735px);overflow-y:auto;overscroll-behavior:contain;padding:9px;display:flex;flex-direction:column;gap:8px}
+.scene-card{background:#1c303b;border:1px solid #3b525f;border-radius:9px;padding:10px 11px;cursor:grab;position:relative;min-height:94px;text-align:left;color:var(--text)}
+.scene-card:focus-visible,.scene-card:hover{border-color:#73d3bd}.scene-card.chosen{background:#225449;border-color:#4ed1b6}
+.scene-card .day{font-size:14px;font-weight:800}.scene-card .cloud{font-size:11px;color:#b2c9d1;margin-top:4px}
+.scene-card .cloud.bad{color:#efbe80}.scene-card .role{color:#7dedd6;font-size:11px;font-weight:700;margin-top:5px}
+.scene-card .thumb{float:right;width:45px;height:45px;border-radius:5px;background:#344955;object-fit:cover;margin:0 0 4px 6px}
+.timeline .hint{padding:12px;color:var(--muted);font-size:11px}
+#removeDrop{margin:7px 9px 10px;border:1px dashed #805f5a;border-radius:8px;text-align:center;padding:10px;color:#d8b8b4;font-size:12px;background:#2b272c}
+#removeDrop.over{border-color:#f0a69a;background:#50342d}
+#addDialog{position:fixed;z-index:9999;inset:0;background:#050b10c9;display:flex;align-items:center;justify-content:center;padding:15px}
+#addDialog .dialog{width:min(100%,650px);max-height:95vh;overflow-y:auto;background:#172630;padding:18px;border:1px solid #5a7880;border-radius:14px;box-shadow:0 20px 70px #0009}
+#pickMap{height:320px;border-radius:9px;margin-top:13px;background:#233b45}
+.field{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.field label{flex:1;min-width:160px;font-size:12px;color:#bacbd2}
+.field input,.field select{width:100%;background:#1f3642;color:white;border:1px solid #52717a;border-radius:8px;padding:10px;margin-top:6px}
+.dialog-buttons{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+footer{font-size:11px;color:#8ea6b0;margin-top:24px}
+@media(max-width:1050px){.shell{grid-template-columns:190px minmax(0,1fr)}.timeline{grid-column:2;position:static}.timeline #timelineScroll{height:275px;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(160px,185px);overflow-x:auto;overflow-y:hidden}}
+@media(max-width:700px){main{padding:14px 11px 48px}nav{padding:10px 14px;gap:9px;flex-wrap:wrap}.tabs{gap:3px}.tabs a{padding:7px 10px;font-size:12px}.shell{grid-template-columns:1fr;gap:11px}.zones-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-height:200px;overflow-y:auto}.timeline{grid-column:1}.head{padding:12px}.canvas-panel{padding:10px}#canvasViewport{min-height:245px}#sourceSlots{gap:5px}.source-slot{padding:7px}.source-slot .handle strong{font-size:11px}.source-slot .meta small{font-size:10px}}
+</style>
+<link rel="icon" type="image/svg+xml" href="mark.svg">
+<link rel="stylesheet" href="brand.css?v=carbon-sand-1"></head><body>
+<header><nav><a href="./" class="brand"><img src="mark.svg" class="brand-mark" alt="" width="31" height="31" aria-hidden="true">Infra<span>Track</span></a>
+<div class="tabs"><a href="./">Overview</a><a class="active" href="monitor.html" aria-current="page">Monitor</a><a href="training.html">Training</a><a href="technical.html">Technical</a></div></nav></header>
+<main>
+<div class="eyebrow">EARTH OBSERVATION / MONITOR</div>
+<div class="shell">
+ <aside class="panel">
+  <div class="panel-title"><h2>My areas</h2><a href="./" class="map-return" title="Back to all monitored areas on the map">Map</a></div>
+  <div id="areas" class="zones-list"><p class="muted small">Loading areas…</p></div>
+  <button id="openAdd" class="area-add" type="button">+ Add an area</button>
+ </aside>
+ <section class="workspace">
+  <div class="head">
+    <div><h1 id="areaTitle">Choose an area</h1>
+     <p id="areaDetail" class="desc">2 × 2 km real Sentinel-2 observation window</p></div>
+    <button class="primary" id="latestButton" type="button">Latest comparison</button>
+  </div>
+  <div id="recentAlert" hidden role="status"></div>
+  <section class="panel canvas-panel" aria-label="Satellite comparison workspace">
+   <div class="canvas-heading"><div><h2>Compare imagery</h2><p class="sub">Select two observations from the timeline.</p></div>
+     <button id="clearCanvas" type="button">Clear</button></div>
+   <div id="sourceSlots">
+    <div id="slotBefore" class="source-slot" data-slot="before" aria-label="Drop the earlier satellite observation here">
+      <div class="meta" id="beforeSlotContent"><strong>BEFORE</strong><small>Drop an image here</small></div>
+      <button type="button" id="removeBefore" class="remove" title="Remove earlier image" hidden>×</button>
+    </div>
+    <div id="slotAfter" class="source-slot" data-slot="after" aria-label="Drop the later satellite observation here">
+      <div class="meta" id="afterSlotContent"><strong>AFTER</strong><small>Drop an image here</small></div>
+      <button type="button" id="removeAfter" class="remove" title="Remove later image" hidden>×</button>
+    </div>
+   </div>
+   <div id="canvasViewport" aria-label="Satellite image comparison canvas">
+     <div id="emptyCanvas"><strong>Drop a satellite observation</strong>
+      <span>Choose two dates to compare imagery.</span></div>
+     <img id="canvasOld" alt="Earlier selected Sentinel satellite image" hidden>
+     <img id="canvasNew" alt="Later selected Sentinel satellite image" hidden>
+     <div id="canvasDivider" hidden></div>
+     <div id="canvasLabels" hidden><span id="labelOld" class="chip left">BEFORE</span><span id="labelNew" class="chip right">AFTER</span></div>
+     <canvas id="changeLayer" hidden aria-label="Unverified grouped RGB changes"></canvas>
+     <canvas id="regionFocus" hidden aria-hidden="true"></canvas>
+     <div id="unregisteredPair" hidden aria-label="Unregistered source images displayed side-by-side">
+        <figure><img id="unregisteredBefore" alt="Earlier satellite image, alignment not verified"><figcaption id="unregisteredBeforeDate">Earlier observation</figcaption></figure>
+        <figure><img id="unregisteredAfter" alt="Later satellite image, alignment not verified"><figcaption id="unregisteredAfterDate">Later observation</figcaption></figure>
+     </div>
+   </div>
+   <div id="compareControls" hidden>
+      <span>Before</span><input id="compareRange" type="range" min="0" max="100" value="50" aria-label="Reveal newer satellite image"><span>After</span>
+   </div>
+   <p id="alignmentState" class="unverified" role="status">Geometric alignment has not been checked.</p>
+   <p id="canvasStatus" role="status">No satellite image selected.</p>
+   <div class="canvas-footer">
+     <button type="button" id="highlightBtn" aria-pressed="false" disabled>Show change regions</button>
+     <p id="changeSummary" class="muted">Experimental RGB evidence; not a validated construction classifier.</p>
+   </div>
+   <section id="changeEvents" class="change-events" aria-label="Unverified visual change regions" hidden>
+    <div class="change-events-heading"><h3>Change evidence</h3><span id="changeEventsCount"></span></div>
+    <div class="change-tools" role="group" aria-label="Change Intelligence review options">
+     <button type="button" id="shadowToggle" aria-pressed="false" title="Include brightness-only changes that resemble shadows">Include shadow-like</button>
+     <button type="button" id="inspectNDVI" title="Read real Sentinel-2 B04 and B08 reflectance bands for both dates">Analyze NDVI</button>
+     <button type="button" id="checkPersistence" title="Compare the selected baseline with a usable later observation">Check later date</button>
+    </div>
+    <p id="changeEvidenceStatus" class="muted small" role="status">Candidates are not verified ground changes.</p>
+    <div id="changeEventsList" class="change-events-list"></div>
+    <section id="regionInspector" class="region-inspector" aria-label="Selected region interpretation" aria-live="polite" hidden>
+     <div class="region-inspector-head">
+      <span id="regionInspectorIndex">Region</span>
+      <span id="regionInspectorEvidence">RGB evidence only</span>
+     </div>
+     <h3 id="regionInspectorHypothesis">Unclassified change</h3>
+     <p id="regionInspectorWhy"></p>
+     <p id="regionInspectorAlternative" class="muted small"></p>
+     <div id="regionInspectorFacts" class="region-inspector-facts"></div>
+     <p class="region-inspector-note">Research-stage hypothesis, not a verified detection or AI confidence score.</p>
+    </section>
+   </section>
+  </section>
+ </section>
+ <aside class="panel timeline" aria-label="Satellite observation timeline">
+   <div class="panel-title"><h2>Timeline</h2><button id="refreshTimeline" type="button" title="Refresh catalog">↻</button></div>
+   <div class="time-actions"><select id="timeRange" aria-label="Timeline history range"><option value="30">30 days</option><option value="90" selected>90 days</option><option value="180">180 days</option><option value="365">365 days</option></select></div>
+   <div class="hint" id="timelineStatus">Fetching real Sentinel-2 observations…</div>
+   <div id="timelineScroll" tabindex="0" aria-label="Scroll vertically through dated Sentinel-2 observations">
+      <div class="muted small">Loading…</div>
+   </div>
+   <div id="removeDrop" aria-label="Drop an image from the canvas here to remove it">↶ Drop a canvas image here to remove</div>
+   <p class="hint">Cloud % refers to the entire scene, not necessarily your square. Small thumbnails show the source satellite tile until an exact 2 km crop has loaded. You can inspect cloudy dates manually.</p>
+ </aside>
+</div>
+<footer>Sentinel-2 Level-2A via Element84 Earth Search · 10 m true-color image pixels · Some scenes may be cloudy or unavailable · Experimental visual differences are not verified construction detections. Personal areas are saved only in your browser.</footer>
+</main>
+<div id="addDialog" hidden role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+ <div class="dialog">
+  <div class="panel-title" style="padding:0 0 10px"><h2 id="dialogTitle">Add an area to Monitor</h2><button type="button" id="closeAdd">✕</button></div>
+  <p class="muted small">Click the map to choose a 2 × 2 km observation window anywhere in Europe.</p>
+  <div id="pickMap"></div><p class="muted small" id="pointCoordinates" style="margin-top:8px">No location selected</p>
+  <div class="field">
+   <label>Area name<input id="areaName" maxlength="60" placeholder="e.g. Autostrada Sibiu-Făgăraș"></label>
+   <label>Interest<select id="areaType"><option value="construction">Construction site</option><option value="farmland">Farmland</option><option value="forest">Forest</option><option value="urban">Urban development</option><option value="other">Other</option></select></label>
+  </div>
+  <div class="dialog-buttons"><button id="cancelAdd" type="button">Cancel</button><button class="primary" id="saveArea" type="button">Save area</button></div>
+  <p id="addStatus" class="muted small" role="status" style="margin-top:9px"></p>
+ </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+<script src="custom_preview.js"></script>
+<script src="monitor_workspace_core.js"></script>
+<script src="image_registration.js"></script>
+<script src="registration_v2.js"></script>
+<script src="change_intelligence.js"></script>
+<script src="region_inspector.js"></script>
+<script src="monitor_workspace.js"></script>
+</body></html>
