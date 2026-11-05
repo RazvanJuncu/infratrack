@@ -37,6 +37,25 @@ function sceneDate(item) {
  const dt=item?.properties?.datetime;
  return typeof dt==="string"&&/^\d{4}-\d{2}-\d{2}/.test(dt)?dt.slice(0,10):null;
 }
+// Display dates are UTC to preserve the exact satellite acquisition day.
+const SHORT_DATE=new Intl.DateTimeFormat("en-GB",{
+ day:"numeric",month:"short",year:"numeric",timeZone:"UTC"
+});
+const MONTH_DATE=new Intl.DateTimeFormat("en-GB",{
+ month:"long",timeZone:"UTC"
+});
+function parsedDay(value){
+ if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;
+ const d=new Date(value+"T00:00:00Z");
+ return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value?d:null;
+}
+function humanDate(iso){
+ const d=parsedDay(iso);return d?SHORT_DATE.format(d):null;
+}
+function timelineGroup(iso){
+ const d=parsedDay(iso);
+ return d?{year:iso.slice(0,4),month:iso.slice(0,7),monthName:MONTH_DATE.format(d)}:null;
+}
 function sceneCloud(item) {
  const raw=item?.properties?.["eo:cloud_cover"];
  const n=raw===undefined||raw===null?NaN:Number(raw);
@@ -178,7 +197,7 @@ function rgbDifference(before,after,threshold=48,beforeMask=null,afterMask=null)
     percent:valid?Math.round(changed/valid*1000)/10:null,
     threshold,model:"Untrained RGB visual difference, not AI"};
 }
-const api={KEY,isAllowed,bounds,validSaved,readSaved,sceneDate,sceneCloud,
+const api={KEY,isAllowed,bounds,validSaved,readSaved,sceneDate,sceneCloud,humanDate,timelineGroup,
   containsBbox,catalogScenes,ordered,dropInto,addByClick,removeFrom,
   pairFrom,uniqueIds,sliderClip,cloudAlert,payload,parsePayload,rgbDifference,alignedRGBA};
 if(typeof module==="object"&&module.exports)module.exports=api;
