@@ -1,0 +1,269 @@
+/*
+ InfraTrack / Liquid Glass UI experiment (November 2026)
+ An additive stylesheet: Classic Carbon / Sand is preserved in brand.css.
+ Set html[data-ui-finish="classic"] to disable this entire visual treatment.
+ Genuine satellite images and change overlays are never filtered or modified.
+*/
+html[data-ui-finish="glass"]{
+ --glass-rim:rgba(255,245,226,.30);
+ --glass-soft-rim:rgba(255,250,238,.15);
+ --glass-cream:#F3C48A;
+ --glass-sand:#D49A58;
+ --glass-text:#F0EFEB;
+ --glass-shadow:0 16px 36px rgba(4,8,9,.48),0 2px 9px rgba(0,0,0,.32);
+}
+html[data-ui-finish="glass"] body{
+ --panel:rgba(31,38,39,.82);
+ --panel2:rgba(37,44,44,.84);
+ --border:rgba(240,234,220,.19);
+ --brand-outline:rgba(241,231,210,.25);
+}
+html[data-ui-finish="glass"] body header,
+html[data-ui-finish="glass"] body nav{
+ background:
+  linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.055) 2%,transparent 25%),
+  linear-gradient(165deg,rgba(63,73,73,.85),rgba(19,26,27,.90) 46%,rgba(36,44,43,.88))!important;
+ border-color:rgba(255,245,224,.29)!important;
+ box-shadow:inset 0 1px rgba(255,255,255,.31),
+  inset 0 -1px rgba(5,6,7,.48),0 8px 22px rgba(3,7,8,.26)!important;
+ -webkit-backdrop-filter:blur(20px) saturate(150%);
+ backdrop-filter:blur(20px) saturate(150%);
+}
+html[data-ui-finish="glass"] body.overview-page header{
+ border-bottom-left-radius:18px;
+ border-bottom-right-radius:18px;
+}
+html[data-ui-finish="glass"] body nav{
+ background:transparent!important;
+ box-shadow:none!important;
+ border-color:transparent!important;
+}
+html[data-ui-finish="glass"] body .brand-mark{
+ filter:drop-shadow(0 0 7px rgba(244,191,111,.28));
+}
+/* Non-interactive large glass — square corners preserve InfraTrack geometry. */
+html[data-ui-finish="glass"] body .panel,
+html[data-ui-finish="glass"] body .metric-card,
+html[data-ui-finish="glass"] body .head,
+html[data-ui-finish="glass"] body.overview-page .overview-rail,
+html[data-ui-finish="glass"] body.overview-page .overview-detail,
+html[data-ui-finish="glass"] body #addDialog .dialog{
+ background:
+  linear-gradient(158deg,rgba(250,247,235,.15) 0%,rgba(237,224,203,.052) 7%,transparent 28%),
+  linear-gradient(160deg,rgba(48,58,58,.85),rgba(22,29,30,.88) 48%,rgba(40,43,40,.88))!important;
+ border:1px solid var(--glass-rim)!important;
+ box-shadow:
+  inset 0 1px 0 rgba(255,255,255,.36),
+  inset 1px 0 0 rgba(255,255,255,.065),
+  inset 0 -1px 0 rgba(0,0,0,.42),
+  var(--glass-shadow)!important;
+ -webkit-backdrop-filter:blur(23px) saturate(145%);
+ backdrop-filter:blur(23px) saturate(145%);
+ border-radius:0!important;
+}
+/* Overview cards float above the satellite basemap. */
+html[data-ui-finish="glass"] body.overview-page .overview-rail,
+html[data-ui-finish="glass"] body.overview-page .overview-detail{
+ background:
+  linear-gradient(166deg,rgba(255,255,255,.15),transparent 23%),
+  linear-gradient(140deg,rgba(51,62,59,.83),rgba(20,28,28,.89) 58%,rgba(36,41,39,.87))!important;
+ border-color:rgba(255,250,237,.34)!important;
+}
+html[data-ui-finish="glass"] body.overview-page .rail-heading,
+html[data-ui-finish="glass"] body.overview-page .rail-footer,
+html[data-ui-finish="glass"] body.overview-page .preview-caption{
+ border-color:rgba(255,252,242,.18)!important;
+}
+html[data-ui-finish="glass"] body.overview-page .overview-area-list{
+ padding:4px 8px;
+}
+html[data-ui-finish="glass"] body.overview-page .overview-area{
+ border:1px solid rgba(255,249,237,.18)!important;
+ border-bottom-color:rgba(1,4,5,.43)!important;
+ border-top-color:rgba(255,255,255,.18)!important;
+ border-radius:12px!important;
+ margin:4px 0;
+ background:
+  linear-gradient(180deg,rgba(255,255,255,.095),transparent 37%),
+  linear-gradient(145deg,rgba(79,90,87,.35),rgba(19,24,24,.33))!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.11),
+   0 3px 8px rgba(0,0,0,.20)!important;
+ transition:background .17s ease,box-shadow .17s ease,border-color .17s ease,transform .17s ease;
+}
+html[data-ui-finish="glass"] body.overview-page .overview-area:hover{
+ transform:translateY(-1px);
+ background:linear-gradient(160deg,rgba(126,132,122,.38),rgba(24,30,29,.56))!important;
+ border-color:rgba(250,240,220,.40)!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 5px 13px rgba(0,0,0,.29)!important;
+}
+html[data-ui-finish="glass"] body.overview-page .overview-area.active{
+ border-color:rgba(245,187,111,.78)!important;
+ background:
+  linear-gradient(180deg,rgba(255,212,153,.15),transparent 55%),
+  linear-gradient(145deg,rgba(110,84,52,.48),rgba(46,40,32,.46))!important;
+ box-shadow:inset 0 1px 0 rgba(255,235,194,.32),
+  inset 0 0 0 1px rgba(251,176,87,.20),
+  0 0 18px rgba(212,154,88,.16),0 5px 14px rgba(0,0,0,.35)!important;
+}
+/* Embossed buttons have a highlight top lip, dark base lip and a soft cast shadow. */
+html[data-ui-finish="glass"] body button:not(.scene-card):not(.area):not(.overview-area),
+html[data-ui-finish="glass"] body .button,
+html[data-ui-finish="glass"] body nav .tabs a,
+html[data-ui-finish="glass"] body .map-return,
+html[data-ui-finish="glass"] body.overview-page .overview-tools button,
+html[data-ui-finish="glass"] body.overview-page .workspace-link{
+ border-radius:999px!important;
+ background:
+  linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.075) 6%,transparent 42%),
+  linear-gradient(166deg,rgba(81,89,86,.82),rgba(36,44,43,.83) 45%,rgba(52,56,52,.83))!important;
+ color:#F2F1EC!important;
+ border:1px solid rgba(252,247,233,.35)!important;
+ box-shadow:
+  inset 0 1.4px 0 rgba(255,255,255,.44),
+  inset 0 2.5px 3px rgba(255,255,255,.08),
+  inset 0 -2px 2px rgba(0,0,0,.42),
+  0 1px 0 rgba(0,0,0,.42),0 5px 14px rgba(2,6,6,.32)!important;
+ text-shadow:0 1px 1px rgba(0,0,0,.28);
+ -webkit-backdrop-filter:blur(10px) saturate(140%);
+ backdrop-filter:blur(10px) saturate(140%);
+ transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,border-color .16s ease!important;
+}
+html[data-ui-finish="glass"] body button:not(.scene-card):not(.area):not(.overview-area):hover,
+html[data-ui-finish="glass"] body .button:hover,
+html[data-ui-finish="glass"] body nav .tabs a:hover,
+html[data-ui-finish="glass"] body.overview-page .overview-tools button:hover,
+html[data-ui-finish="glass"] body.overview-page .workspace-link:hover{
+ filter:brightness(1.13);
+ border-color:rgba(255,245,224,.58)!important;
+ transform:translateY(-1px);
+}
+html[data-ui-finish="glass"] body button:not(.scene-card):not(.area):not(.overview-area):active,
+html[data-ui-finish="glass"] body nav .tabs a:active{
+ transform:translateY(1px);
+ box-shadow:inset 0 2px 5px rgba(0,0,0,.40),
+  inset 0 -1px rgba(255,255,255,.12),0 1px 3px rgba(0,0,0,.22)!important;
+}
+html[data-ui-finish="glass"] body button:disabled{
+ opacity:.48;
+ filter:saturate(.5);
+ transform:none!important;
+ cursor:not-allowed;
+}
+/* Molten sand / satin gold for primary CTAs and active tabs. */
+html[data-ui-finish="glass"] body button.primary,
+html[data-ui-finish="glass"] body .primary,
+html[data-ui-finish="glass"] body .btn-primary,
+html[data-ui-finish="glass"] body nav .tabs a[aria-current="page"],
+html[data-ui-finish="glass"] body.overview-page #addAreaMap,
+html[data-ui-finish="glass"] body.overview-page #saveNewArea,
+html[data-ui-finish="glass"] body.overview-page .workspace-link{
+ background:
+  linear-gradient(180deg,rgba(255,249,229,.78) 0%,rgba(255,235,198,.45) 3%,rgba(255,255,255,.07) 24%,transparent 46%),
+  linear-gradient(180deg,#E6B879 0%,#DCAB6C 35%,#D29B59 69%,#B98143 99%)!important;
+ border:1px solid #F8C88B!important;
+ color:#241C15!important;
+ box-shadow:
+  inset 0 1.5px 0 rgba(255,249,226,.83),
+  inset 0 3px 4px rgba(255,247,216,.27),
+  inset 0 -2.8px 2px rgba(110,65,21,.43),
+  0 1px 0 rgba(29,22,13,.68),
+  0 6px 16px rgba(0,0,0,.40),
+  0 0 17px rgba(218,153,73,.17)!important;
+ text-shadow:0 1px 0 rgba(255,238,201,.35);
+ font-weight:650!important;
+}
+html[data-ui-finish="glass"] body button.primary:hover,
+html[data-ui-finish="glass"] body nav .tabs a[aria-current="page"]:hover,
+html[data-ui-finish="glass"] body.overview-page #addAreaMap:hover,
+html[data-ui-finish="glass"] body.overview-page .workspace-link:hover{
+ filter:brightness(1.075);
+ border-color:#FFE2B5!important;
+}
+/* Glass selection — pressed without becoming a permanent neon warning. */
+html[data-ui-finish="glass"] body #highlightBtn[aria-pressed="true"],
+html[data-ui-finish="glass"] body #shadowToggle[aria-pressed="true"]{
+ border-color:rgba(243,181,116,.70)!important;
+ color:#F8D09D!important;
+ background:
+  linear-gradient(180deg,rgba(254,220,178,.18),transparent 55%),
+  linear-gradient(145deg,rgba(93,68,47,.83),rgba(48,41,35,.81))!important;
+}
+html[data-ui-finish="glass"] body .scene-card,
+html[data-ui-finish="glass"] body #changeEventsList button{
+ background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,0) 60%)!important;
+ border-bottom:1px solid rgba(255,249,239,.15)!important;
+ box-shadow:none!important;
+}
+html[data-ui-finish="glass"] body .scene-card.chosen{
+ background:linear-gradient(135deg,rgba(213,153,81,.22),rgba(40,42,38,.14))!important;
+ border-left-color:var(--glass-sand)!important;
+}
+html[data-ui-finish="glass"] body .scene-card:hover,
+html[data-ui-finish="glass"] body #changeEventsList button:hover{
+ background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04))!important;
+}
+html[data-ui-finish="glass"] body .source-slot,
+html[data-ui-finish="glass"] body input:not([type="range"]),
+html[data-ui-finish="glass"] body select,
+html[data-ui-finish="glass"] body textarea{
+ background:
+  linear-gradient(180deg,rgba(0,0,0,.20),rgba(255,255,255,.055) 95%)!important;
+ border:1px solid rgba(248,240,222,.22)!important;
+ box-shadow:inset 0 2px 5px rgba(0,0,0,.26),
+  inset 0 -1px 0 rgba(255,255,255,.09)!important;
+ color:var(--glass-text)!important;
+}
+html[data-ui-finish="glass"] body #canvasViewport,
+html[data-ui-finish="glass"] body .preview-container{
+ box-shadow:inset 0 2px 10px rgba(0,0,0,.22)!important;
+ border-color:rgba(243,238,222,.18)!important;
+}
+html[data-ui-finish="glass"] body #canvasViewport img,
+html[data-ui-finish="glass"] body #canvasViewport canvas,
+html[data-ui-finish="glass"] body .preview-container img{
+ filter:none!important; /* preserve source scientific imagery */
+}
+/* The appearance toggle itself is a small non-destructive control. */
+body .ui-finish-switch{
+ flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ padding:7px 12px!important;min-height:34px;font-size:11px!important;
+ border-radius:999px!important;white-space:nowrap;
+ margin-left:9px;
+}
+body .ui-finish-symbol{font-size:14px;color:#E5B77F}
+html[data-ui-finish="glass"] body .ui-finish-switch{
+ border-color:rgba(252,207,151,.68)!important;
+}
+html[data-ui-finish="glass"] body .ui-finish-switch .ui-finish-symbol{
+ color:#FFD19A;text-shadow:0 0 9px rgba(255,205,141,.65);
+}
+html[data-ui-finish="classic"] body .ui-finish-switch{
+ background:#2B3033!important;border:1px solid #555D5E!important;
+ color:#F0EDE7!important;box-shadow:none!important;
+}
+html[data-ui-finish="classic"] body .ui-finish-switch .ui-finish-symbol{color:#C69C72}
+@media(max-width:750px){
+ body .ui-finish-switch{margin-left:3px;padding:6px 9px!important;min-height:31px;font-size:10px!important}
+ html[data-ui-finish="glass"] body.overview-page .overview-rail{background-color:rgba(24,30,30,.92)!important}
+ html[data-ui-finish="glass"] body.overview-page .overview-detail{background-color:rgba(24,30,30,.94)!important}
+}
+@media(max-width:480px){body .ui-finish-switch .ui-finish-symbol{display:none}}
+@media(prefers-reduced-motion:reduce){
+ html[data-ui-finish="glass"] body button,html[data-ui-finish="glass"] body nav a,
+ html[data-ui-finish="glass"] body .overview-area{transition:none!important;transform:none!important}
+}
+@media(prefers-reduced-transparency:reduce){
+ html[data-ui-finish="glass"] body .panel,
+ html[data-ui-finish="glass"] body.overview-page .overview-rail,
+ html[data-ui-finish="glass"] body.overview-page .overview-detail{
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+  background:#252C2C!important;
+ }
+}
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+ html[data-ui-finish="glass"] body .panel,
+ html[data-ui-finish="glass"] body.overview-page .overview-rail,
+ html[data-ui-finish="glass"] body.overview-page .overview-detail{
+  background:#242C2C!important;
+ }
+}
