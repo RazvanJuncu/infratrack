@@ -1,0 +1,122 @@
+/* InfraTrack / map-first overview / Carbon–Sand
+   Map is the product canvas: flat surfaces, few panels and compact controls. */
+body.overview-page{margin:0;height:100dvh;min-height:500px;overflow:hidden;background:#15191C}
+body.overview-page header{position:relative;z-index:1500;background:#1B1F22!important;border-bottom:1px solid #383E41}
+body.overview-page header nav{max-width:none;width:100%;min-height:66px;padding:12px 24px}
+body.overview-page .tabs a[href="./"]::before{
+ --ui-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z'/%3E%3Cpath d='M9 3v15M15 6v15'/%3E%3C/svg%3E");
+}
+body.overview-page .tabs a[href="monitor.html"]::before{
+ --ui-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='1'/%3E%3Cpath d='M12 3v18M3 12h18'/%3E%3C/svg%3E");
+}
+body.overview-page .tabs a[href="training.html"]::before,body.overview-page .tabs a[href="technical.html"]::before{content:"";width:15px;height:15px;display:inline-block;background:currentColor;mask:var(--ui-icon) center/contain no-repeat}
+body.overview-page #overviewRoot{position:relative!important;margin:0!important;padding:0!important;max-width:none!important;width:100%;height:calc(100dvh - 66px);min-height:400px;overflow:hidden}
+body.overview-page #overviewMap{position:absolute;inset:0;width:100%;height:100%;background:#10191B;z-index:0}
+body.overview-page .leaflet-container{background:#10191B;font-family:var(--brand-font)}
+body.overview-page .leaflet-control-zoom{border:1px solid #3C4143!important;border-radius:0!important;box-shadow:none!important}
+body.overview-page .leaflet-control-zoom a{background:#1B1F22!important;color:#E8E9E5!important;border-color:#434A4D!important;border-radius:0!important}
+body.overview-page .leaflet-control-attribution{background:#15191CEB!important;color:#A5AAA8!important;font:10px/1.6 var(--brand-font)}
+body.overview-page .leaflet-control-attribution a{color:#E0AD78!important}
+body.overview-page .leaflet-bottom.leaflet-right{z-index:1000}
+body.overview-page .leaflet-top.leaflet-left{left:auto;right:24px;top:87px}
+body.overview-page .leaflet-top.leaflet-right{top:87px}
+body.overview-page .map-fade{display:none}
+body.overview-page button{box-shadow:none!important}
+body.overview-page .overview-tools{position:absolute;top:18px;right:25px;z-index:650;display:flex;align-items:center;gap:8px}
+body.overview-page .overview-tools button{min-height:37px;border-radius:999px!important;background:#1B1F22EB!important;border:1px solid #495053!important;color:#E8E9E5!important;padding:8px 15px!important;font-size:11px;font-weight:600}
+body.overview-page .overview-tools button:hover{border-color:#D49A58!important}
+body.overview-page .overview-tools #fitAll span{font-size:17px;margin-right:4px;vertical-align:-1px}
+body.overview-page .overview-rail{position:absolute;top:20px;left:22px;z-index:700;display:flex;flex-direction:column;width:min(315px,calc(100vw - 40px));max-height:calc(100% - 76px);background:#1C2123F2;border:1px solid #3C4446;box-shadow:0 12px 40px #06080955}
+body.overview-page .rail-heading{padding:22px 22px 14px}
+body.overview-page .rail-kicker,.overview-detail .detail-top,.preview-caption>span{font:600 10px/1.3 var(--brand-mono);letter-spacing:.08em;color:#D49A58}
+body.overview-page .rail-title-row{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-top:10px}
+body.overview-page .rail-title-row h1{font-size:28px!important;margin:0!important;letter-spacing:-.045em!important;font-weight:600!important}
+body.overview-page #areaCount{color:#D49A58;font:500 14px var(--brand-mono)}
+body.overview-page .rail-heading p{font-size:11px;color:#A5AAA8;margin-top:5px}
+body.overview-page .overview-area-list{overflow-y:auto;min-height:20px;max-height:min(46vh,440px);overscroll-behavior:contain;scrollbar-color:#505453 transparent;scrollbar-width:thin}
+body.overview-page .overview-area{width:100%;padding:12px 20px 12px 22px!important;text-align:left;background:transparent!important;border:0!important;border-top:1px solid #383E41!important;border-left:2px solid transparent!important;border-radius:0!important;color:#E8E9E5!important;display:flex;align-items:center;gap:10px}
+body.overview-page .overview-area:hover{background:#2B3033!important}
+body.overview-page .overview-area.active{background:#302C27!important;border-left-color:#D49A58!important}
+body.overview-page .overview-area .area-number{color:#D49A58;font:500 10px var(--brand-mono);flex:0 0 21px}
+body.overview-page .overview-area .area-text{display:flex;flex-direction:column;align-items:flex-start;flex:1;min-width:0}
+body.overview-page .overview-area strong{font-size:12px;font-weight:600;line-height:1.4;white-space:normal}
+body.overview-page .overview-area small{font-size:10px;color:#A5AAA8;line-height:1.4;margin-top:3px}
+body.overview-page .overview-area .area-chevron{font-size:15px;color:#7E8784}
+body.overview-page .overview-placeholder{color:#A5AAA8;padding:15px 21px;font-size:12px}
+body.overview-page .rail-footer{border-top:1px solid #383E41;padding:14px 20px 16px;display:flex;flex-direction:column;gap:9px}
+body.overview-page #addAreaMap{width:100%;min-height:37px;padding:7px 11px}
+body.overview-page .rail-footer span{color:#A5AAA8;font-size:10px;line-height:1.5}
+body.overview-page .overview-detail{position:absolute;z-index:800;top:74px;right:24px;width:min(352px,calc(100vw - 44px));max-height:calc(100% - 115px);overflow-y:auto;background:#1B2022F7;border:1px solid #494D4B;padding:20px 21px 19px;box-shadow:0 14px 44px #07090A6B;scrollbar-color:#505453 transparent;scrollbar-width:thin}
+body.overview-page .detail-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+body.overview-page .detail-top button{font-size:20px;line-height:1;border:0!important;background:transparent!important;color:#BFC4C0!important;padding:2px 6px!important;border-radius:999px!important}
+body.overview-page .overview-detail h2{font-size:22px!important;margin:12px 0 3px;line-height:1.2;letter-spacing:-.035em}
+body.overview-page .detail-region{color:#A5AAA8;font-size:11px;margin:0 0 16px;line-height:1.5}
+body.overview-page .preview-container{width:100%;aspect-ratio:1;background:#14191B;border:1px solid #383F40;display:grid;place-items:center;overflow:hidden}
+body.overview-page .preview-container img{width:100%;height:100%;object-fit:contain}
+body.overview-page .preview-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;padding:18px;color:#A5AAA8;font-size:11px}
+body.overview-page .preview-placeholder>span:first-child{font-size:32px;color:#D49A58}
+body.overview-page .preview-placeholder strong{font-size:12px;font-weight:600;color:#E8E9E5}
+body.overview-page .preview-caption{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid #3C4244;padding:13px 0 10px}
+body.overview-page .preview-caption>span{color:#A5AAA8;font-size:9px;line-height:1.5}
+body.overview-page .preview-caption strong{color:#E8E9E5;font:500 12px var(--brand-font);white-space:nowrap}
+body.overview-page .preview-source{padding:8px 0 5px;display:flex;justify-content:space-between;gap:10px;color:#D49A58;font:10px var(--brand-mono)}
+body.overview-page .preview-source #detailScene{color:#A5AAA8;white-space:nowrap}
+body.overview-page .detail-status{color:#B6BDB9;font-size:11px;line-height:1.5;margin:10px 0 15px}
+body.overview-page .workspace-link{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:12px 14px;background:#D49A58!important;color:#171A1C!important;border-radius:999px!important;border:1px solid #D49A58;font-size:12px;font-weight:650;text-decoration:none!important}
+body.overview-page .workspace-link:hover{background:#E9B57A!important}
+body.overview-page .detail-note{font-size:10px;color:#929A96;line-height:1.5;margin-top:12px}
+body.overview-page .map-bottom-note{position:absolute;z-index:640;bottom:16px;left:22px;background:#1C2123E8;border:1px solid #414748;border-radius:999px;padding:7px 13px;max-width:400px;font:10px/1.5 var(--brand-font);color:#C1C5C2}
+body.overview-page .live-dot{display:inline-block;width:6px;height:6px;margin-right:6px;border-radius:50%;background:#D49A58}
+body.overview-page .site-marker{width:30px;height:30px;background:#1D2223;border:1px solid #D49A58;border-radius:999px;color:#F4E5D0;display:grid;place-items:center;font:600 10px var(--brand-mono);box-shadow:0 1px 12px #000A}
+body.overview-page .site-marker.is-selected{background:#D49A58;color:#16191B;box-shadow:0 1px 22px #D49A584F}
+body.overview-page .leaflet-tooltip.site-tooltip{background:#1C2123;color:#ECEEEA;border:1px solid #5B5650;border-radius:0;box-shadow:none;font:11px var(--brand-font)}
+body.overview-page .site-tooltip::before{display:none}
+body.overview-page .new-area-panel label{display:block;font-size:11px;color:#BEC4C0;margin:15px 0 6px}
+body.overview-page .new-area-panel input,body.overview-page .new-area-panel select{width:100%;min-height:40px;background:#2B3033;color:#E8E9E5;border:1px solid #565F5F;padding:8px 12px;border-radius:0!important}
+body.overview-page .new-area-panel #saveNewArea{width:100%;margin-top:19px;padding:10px 12px}
+body.overview-page .new-area-coordinates{font:11px var(--brand-mono);color:#D49A58;border:1px solid #454E4D;padding:12px;margin:12px 0}
+body.overview-page .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:900px){
+ body.overview-page .overview-rail{width:250px;left:12px;top:12px;max-height:calc(100% - 110px)}
+ body.overview-page .rail-heading{padding:15px}
+ body.overview-page .rail-title-row h1{font-size:21px!important}
+ body.overview-page .overview-area-list{max-height:32vh}
+ body.overview-page .overview-area{padding:10px 10px!important}
+ body.overview-page .overview-detail{right:12px;width:300px;top:65px;max-height:calc(100% - 99px);padding:16px}
+ body.overview-page .overview-tools{top:12px;right:12px}
+ body.overview-page .map-bottom-note{left:12px;bottom:10px;max-width:265px}
+}
+@media(max-width:650px){
+ body.overview-page header nav{min-height:60px;padding:8px 10px;gap:5px}
+ body.overview-page .brand{font-size:17px!important;gap:5px}
+ body.overview-page .brand-mark{width:25px;height:25px;flex-basis:25px}
+ body.overview-page .tabs{margin-left:auto;overflow-x:auto;gap:1px}
+ body.overview-page nav .tabs a{font-size:10px;padding:6px 8px;min-height:32px}
+ body.overview-page nav .tabs a::before{display:none}
+ body.overview-page #overviewRoot{height:calc(100dvh - 60px)}
+ body.overview-page .overview-tools{top:11px;right:10px}
+ body.overview-page .overview-tools button{padding:6px 10px!important;min-height:32px;font-size:10px}
+ body.overview-page .overview-rail{left:10px;top:52px;width:222px;max-height:min(37vh,245px)}
+ body.overview-page .rail-heading{padding:10px 13px}
+ body.overview-page .rail-heading p{display:none}
+ body.overview-page .rail-kicker{font-size:8px}
+ body.overview-page .rail-title-row{margin-top:5px}
+ body.overview-page .rail-title-row h1{font-size:18px!important}
+ body.overview-page .overview-area-list{max-height:125px}
+ body.overview-page .overview-area{padding:8px 9px!important}
+ body.overview-page .overview-area strong{font-size:11px}
+ body.overview-page .overview-area small{display:none}
+ body.overview-page .rail-footer{padding:8px 12px}
+ body.overview-page .rail-footer span{display:none}
+ body.overview-page .overview-detail{left:0;right:0;bottom:0;top:auto;width:100%;max-height:60vh;max-width:none;box-shadow:0 -12px 35px #05060699;padding:13px 16px 20px;border-left:0;border-right:0}
+ body.overview-page .overview-detail h2{font-size:17px!important;margin-top:6px}
+ body.overview-page .detail-region{margin-bottom:9px}
+ body.overview-page .preview-container{aspect-ratio:16/9;max-height:170px}
+ body.overview-page .preview-container img{object-fit:contain}
+ body.overview-page .preview-caption{padding:9px 0 7px}
+ body.overview-page .overview-detail .detail-note{display:none}
+ body.overview-page .map-bottom-note{display:none}
+ body.overview-page .leaflet-top.leaflet-left{right:10px;top:53px}
+ body.overview-page .new-area-panel{max-height:67vh}
+}
+@media(prefers-reduced-motion:reduce){body.overview-page *{scroll-behavior:auto!important}}
