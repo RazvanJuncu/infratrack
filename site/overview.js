@@ -3,6 +3,7 @@
    Sentinel-2 COG crops checked for local SCL clear-pixel coverage. */
 (function(root){
 "use strict";
+const extraction=root.InfraExtractionLink;
 const core=typeof module==="object"&&module.exports?
  require("./monitor_workspace_core.js"):root.InfraWorkspaceCore;
 const preview=typeof module==="object"&&module.exports?
@@ -16,6 +17,7 @@ let map=null,basemap=null,basemapType="satellite",tileErrors=0;
 let areas=[],selected=null,markers=new Map(),footprints=new Map();
 let newMode=false,newPoint=null,newRectangle=null;
 let previewRevision=0,previewController=null,selectedPreviewCache=new Map();
+let extractionFrame=0;
 const EXTERNAL_ATTRIBUTION='Sources: Esri, Vantor, Earthstar Geographics, and the GIS User Community';
 function elt(tag,contents,cls){
  const e=document.createElement(tag);
@@ -67,6 +69,40 @@ function pin(index,isSelected){
   (isSelected?' is-selected':'')+'">'+String(index+1).padStart(2,"0")+"</span>",
   iconSize:[30,30],iconAnchor:[15,15]});
 }
+function clearExtraction(){
+ if(extractionFrame&&root.cancelAnimationFrame)root.cancelAnimationFrame(extractionFrame);
+ extractionFrame=0;
+ if(extraction)extraction.clear($("areaExtraction"));
+ const imageBox=document.querySelector("#overviewDetail .preview-container");
+ imageBox?.classList.remove("is-extracted");
+}
+function updateExtraction(){
+ if(!extraction||!map||!selected||newMode||$("overviewDetail").hidden){
+  if(extraction)extraction.clear($("areaExtraction"));return;
+ }
+ const main=$("overviewRoot"),previewBox=document.querySelector("#overviewDetail .preview-container");
+ if(!main||!previewBox)return;
+ const viewport=main.getBoundingClientRect();
+ const mapBox=map.getContainer().getBoundingClientRect();
+ const box=previewBox.getBoundingClientRect();
+ const [[south,west],[north,east]]=positionRect(selected);
+ const nw=map.latLngToContainerPoint([north,west]);
+ const se=map.latLngToContainerPoint([south,east]);
+ const offX=mapBox.left-viewport.left,offY=mapBox.top-viewport.top;
+ const source={left:Math.min(nw.x,se.x)+offX,right:Math.max(nw.x,se.x)+offX,
+  top:Math.min(nw.y,se.y)+offY,bottom:Math.max(nw.y,se.y)+offY};
+ const target={left:box.left-viewport.left,right:box.right-viewport.left,
+  top:box.top-viewport.top,bottom:box.bottom-viewport.top};
+ const frame={width:viewport.width,height:viewport.height};
+ extraction.render($("areaExtraction"),extraction.geometry(source,target,frame),frame);
+}
+function scheduleExtraction(){
+ if(extractionFrame||!root.requestAnimationFrame)return;
+ extractionFrame=root.requestAnimationFrame(()=>{
+  extractionFrame=0;
+  updateExtraction();
+ });
+}
 function markSelection(){
  for(const [id,marker] of markers)
   marker.setIcon(pin(areas.findIndex(a=>a.id===id),selected?.id===id));
@@ -75,6 +111,7 @@ function markSelection(){
   rect.setStyle({color:active?"#D49A58":"#D2D7CC",
     weight:active?2:1,fillOpacity:active?.08:.018,
     dashArray:active?null:"5 5"});
+  rect.getElement()?.classList.toggle("extract-footprint",active);
  }
  for(const item of $("overviewAreaList").querySelectorAll("button[data-site]")){
   const active=item.dataset.site===selected?.id;
@@ -156,6 +193,7 @@ function clearPreview(){
  $("detailScene").textContent="";
  $("detailImage").hidden=true;
  $("detailImage").removeAttribute("src");
+ document.querySelector("#overviewDetail .preview-container")?.classList.remove("is-ready");
  $("previewPlaceholder").hidden=false;
  $("previewPlaceholder").replaceChildren(
   elt("span","▧"),elt("strong","Loading satellite preview"),
@@ -166,6 +204,8 @@ function showPreview(scene){
  $("detailImage").src=scene.image;
  $("detailImage").hidden=false;
  $("previewPlaceholder").hidden=true;
+ document.querySelector("#overviewDetail .preview-container")?.classList.add("is-ready");
+ scheduleExtraction();
  $("detailDate").textContent=dateLabel(scene.date);
  const local=scene.cloudFraction;
  $("detailCloud").textContent=
@@ -175,6 +215,7 @@ function showPreview(scene){
  previewStatus("Original Sentinel-2 L2A · cropped to this 2 km study area. Local SCL screened; date and source may differ from the map basemap.");
 }
 function previewError(message){
+ document.querySelector("#overviewDetail .preview-container")?.classList.remove("is-ready");
  $("previewPlaceholder").replaceChildren(
   elt("span","◌"),elt("strong","No verified preview"),
   elt("span","The map location is available, but a clear Sentinel-2 crop was not verified."));
@@ -236,9 +277,17 @@ async function loadPreview(area){
 }
 function selectArea(area,options={}){
  if(!area||!map)return;
+ clearExtraction();
  if(newMode)cancelAdding();
  selected=area;markSelection();
  $("overviewDetail").hidden=false;
+ const panel=$("overviewDetail");
+ panel.classList.remove("extract-enter");
+ // Restart extraction animation for every distinct selection.
+ void panel.offsetWidth;
+ panel.classList.add("extract-enter");
+ panel.querySelector(".preview-container")?.classList.add("is-extracted");
+ scheduleExtraction();
  $("newAreaPanel").hidden=true;
  $("detailName").textContent=area.name||"Unnamed area";
  $("detailRegion").textContent=(area.region||"Personal observation area")+
@@ -252,7 +301,7 @@ function selectArea(area,options={}){
  void loadPreview(area);
 }
 function beginAdding(){
- cancelPreview();selected=null;markSelection();newMode=true;newPoint=null;
+ cancelPreview();clearExtraction();selected=null;markSelection();newMode=true;newPoint=null;
  if(newRectangle){map.removeLayer(newRectangle);newRectangle=null}
  $("overviewDetail").hidden=true;$("newAreaPanel").hidden=false;
  $("newAreaCoordinates").textContent="No map point selected yet.";
@@ -326,6 +375,14 @@ function setupMap(){
  root.L.control.zoom({position:"topright"}).addTo(map);
  setBasemap("satellite");
  map.on("click",mapClicked);
+ map.on("move zoom zoomanim moveend zoomend resize",scheduleExtraction);
+ if(root.ResizeObserver){
+  const observer=new root.ResizeObserver(scheduleExtraction);
+  observer.observe($("overviewRoot"));
+  observer.observe($("overviewDetail"));
+  observer.observe(document.querySelector("#overviewDetail .preview-container"));
+ }
+ root.addEventListener("resize",scheduleExtraction);
  return true;
 }
 function wire(){
@@ -335,7 +392,7 @@ function wire(){
  $("cancelNewArea").onclick=cancelAdding;
  $("closeAreaDetail").onclick=()=>{
   $("overviewDetail").hidden=true;
-  selected=null;cancelPreview();markSelection();
+  clearExtraction();selected=null;cancelPreview();markSelection();
   try{history.replaceState(null,"","./")}catch{}
  };
  $("saveNewArea").onclick=saveArea;
