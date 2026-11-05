@@ -3,7 +3,10 @@
    Sentinel-2 COG crops checked for local SCL clear-pixel coverage. */
 (function(root){
 "use strict";
-const core=root.InfraWorkspaceCore,preview=root.InfraCustomPreview;
+const core=typeof module==="object"&&module.exports?
+ require("./monitor_workspace_core.js"):root.InfraWorkspaceCore;
+const preview=typeof module==="object"&&module.exports?
+ require("./custom_preview.js"):root.InfraCustomPreview;
 if(!core||!preview)throw Error("Overview requires the shared Sentinel workspace helpers");
 const $=id=>document.getElementById(id);
 const STAC="https://earth-search.aws.element84.com/v1/search";
@@ -33,6 +36,12 @@ function mergeAreas(registry,saved){
     (x.id.startsWith("custom-")?"saved":"registered")});
  }
  return out;
+}
+function previewCandidates(features,area){
+ return core.catalogScenes(features,area,95)
+  .filter(x=>typeof x.assets?.visual?.href==="string"&&
+    x.assets.visual.href.startsWith("https://"))
+  .filter(x=>{const cloud=core.sceneCloud(x);return cloud===null||cloud<95});
 }
 function savedAreas(){
  try{return core.readSaved(root.localStorage)}catch{return []}
@@ -192,14 +201,10 @@ async function loadPreview(area){
   if(!response.ok)throw Error("Satellite catalog unavailable (HTTP "+response.status+")");
   const catalog=await response.json();
   if(stop())return;
-  const candidates=core.catalogScenes(catalog.features,area,95)
-   .filter(s=>typeof s.assets?.visual?.href==="string"&&s.assets.visual.href.startsWith("https://"));
+  const candidates=previewCandidates(catalog.features,area);
   let checked=0;
   for(const item of candidates){
    if(stop())return;
-   // Extreme whole-tile cloud conditions are unlikely to yield a usable crop.
-   const cloud=core.sceneCloud(item);
-   if(cloud!==null&&cloud>=95)continue;
    checked++;
    previewStatus("Checking "+dateLabel(core.sceneDate(item))+
     " · candidate "+checked+" of 8 for local cloud quality…");
@@ -346,5 +351,7 @@ async function start(){
  if(!setupMap())return;
  await loadAreas();
 }
-start();
+if(typeof module==="object"&&module.exports)
+ module.exports={mergeAreas,activeLink,positionRect,dateLabel,previewCandidates};
+else start();
 })(typeof window!=="undefined"?window:globalThis);
