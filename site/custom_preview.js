@@ -127,7 +127,7 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
  const bbox=visualGrid.bbox;
  pixelWindow(im,bbox);
  if(im.getSamplesPerPixel()<3)throw Error("Original image does not contain three RGB bands");
- let cloudFraction=null,localCheckError=null,cloudMask=null;
+ let cloudFraction=null,localCheckError=null,cloudMask=null,sclClasses=null;
  const scl=urlAsset(item,"scl");
  if(scl){
    try{
@@ -144,6 +144,7 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
        samples:[0],interleave:true,resampleMethod:"nearest"
      });
      const sample=regridSamples(sourceSCL,1,sclGrid);
+     sclClasses=sample;
      cloudFraction=localClear(sample);
      cloudMask=new Uint8Array(sample.length);
      for(let i=0;i<sample.length;i++){
@@ -191,7 +192,7 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
    id:item.id,date:itemDate(item),cloudFraction,
    globalCloud:Number(item.properties["eo:cloud_cover"]),
    image:canvas.toDataURL("image/png"),
-   rgba:bytes,width:size,height:size,cloudMask,
+   rgba:bytes,width:size,height:size,cloudMask,sclClasses,
    epsg,sourceAsset:url,
    gridMode:"WGS84 common-grid",geographicBounds:visualGrid.geoBounds,
    localCheckError,
