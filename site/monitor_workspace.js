@@ -7,6 +7,9 @@
 const core=global.InfraWorkspaceCore;
 const preview=global.InfraCustomPreview;
 const registrar=global.InfraImageRegistration;
+const registrationV2=global.InfraRegistrationV2;
+const changeEngine=global.InfraChangeIntelligence;
+if(!registrationV2||!changeEngine)throw Error("Change Intelligence modules missing");
 if(!core)throw Error("InfraTrack workspace core missing");
 const $=id=>document.getElementById(id);
 const STAC="https://earth-search.aws.element84.com/v1/search";
@@ -309,10 +312,43 @@ function decodePreviewPixels(dataUrl,width,height){
    image.src=dataUrl;
  });
 }
+function resetChangeRegions(){
+ $("changeEvents").hidden=true;
+ $("changeEventsList").replaceChildren();
+ $("regionFocus").hidden=true;
+}
+function showChangeRegions(result,w,h){
+ const list=$("changeEventsList"),focus=$("regionFocus");
+ list.replaceChildren();focus.hidden=true;
+ $("changeEvents").hidden=false;
+ $("changeEventsCount").textContent=result.totalRegions+" regions · unverified";
+ if(!result.totalRegions){
+  list.append(node("p","No coherent candidate regions in the selected clear pixels.","muted small"));
+  return;
+ }
+ result.regions.forEach((region,i)=>{
+  const item=node("button",undefined,"change-event");
+  item.type="button";
+  item.append(node("strong","Region "+(i+1)),
+   node("span",region.pixels+" image px · RGB Δ "+region.meanDelta,"muted small"));
+  item.setAttribute("aria-pressed","false");
+  item.onclick=()=>{
+   Array.from(list.children).forEach(el=>el.setAttribute("aria-pressed","false"));
+   item.setAttribute("aria-pressed","true");
+   focus.style.left=(region.bbox.x/w*100)+"%";
+   focus.style.top=(region.bbox.y/h*100)+"%";
+   focus.style.width=(region.bbox.width/w*100)+"%";
+   focus.style.height=(region.bbox.height/h*100)+"%";
+   focus.hidden=false;
+  };
+  list.append(item);
+ });
+}
 async function applyHighlight(){
  const button=$("highlightBtn"),layer=$("changeLayer");
  button.disabled=!(loadedPair&&loadedPair.length===2);
  const revision=++highlightRevision;
+ resetChangeRegions();
  const pair=loadedPair;
  if(!highlighted||!pair||pair.length!==2){
    layer.hidden=true;
@@ -334,21 +370,23 @@ async function applyHighlight(){
    if(!before.cloudMask||!after.cloudMask||
       before.cloudMask.length!==w*h||after.cloudMask.length!==w*h)
      throw Error("Cannot highlight changes without both valid local cloud masks");
-   const diff=core.rgbDifference(
-     oldBytes,newBytes,48,before.cloudMask,after.cloudMask);
+   const diff=changeEngine.segment(
+     oldBytes,newBytes,w,h,before.cloudMask,after.cloudMask);
    layer.width=before.width;layer.height=before.height;
    const ctx=layer.getContext("2d");
    if(!ctx)throw Error("Canvas rendering unavailable");
    const bitmap=ctx.createImageData(layer.width,layer.height);
    bitmap.data.set(diff.rgba);ctx.putImageData(bitmap,0,0);
    layer.hidden=false;
-   $("changeSummary").textContent=diff.percent===null?
-     "Insufficient comparable RGB pixels":
-     diff.percent+"% of valid RGB pixels exceed the experimental visual threshold. "+
-       "This is NOT trained AI: crops, clouds, illumination and seasonal changes may be highlighted.";
+   showChangeRegions(diff,w,h);
+   $("changeSummary").textContent=diff.validPixels===0?
+     "Insufficient locally clear comparable pixels.":
+     diff.candidatePixels+" image pixels in "+diff.totalRegions+
+     " coherent unverified regions · RGB threshold "+diff.threshold+
+     ". Crop cycles, lighting and residual misalignment can cause false differences.";
  }catch(err){
    if(revision!==highlightRevision||!highlighted||loadedPair!==pair)return;
-   layer.hidden=true;
+   layer.hidden=true;resetChangeRegions();
    $("changeSummary").textContent="Difference overlay unavailable: "+err.message;
  }
 }
@@ -375,7 +413,7 @@ async function alignScenes(first,second){
    core.alignedRGBA(first,decodePreviewPixels),
    core.alignedRGBA(second,decodePreviewPixels)
  ]);
- const result=registrar.estimateRegistration(
+ const result=registrationV2.estimateRegistration(
    a,b,w,h,first.cloudMask,second.cloudMask);
  if(!result.ok)throw Error(result.reason||
    "Not enough persistent stable landmarks to estimate a safe transform");
@@ -388,7 +426,7 @@ async function alignScenes(first,second){
  };
 }
 function showUnregisteredPair(first,second,reason){
- loadedPair=null;
+ loadedPair=null;resetChangeRegions();
  $("canvasOld").hidden=true;$("canvasNew").hidden=true;
  $("canvasDivider").hidden=true;$("canvasLabels").hidden=true;
  $("compareControls").hidden=true;$("changeLayer").hidden=true;
@@ -405,7 +443,7 @@ function showUnregisteredPair(first,second,reason){
 }
 
 async function updateCanvas(){
- cancelView();
+ cancelView();resetChangeRegions();
  renderSlots();renderTimeline();
  const matched=core.pairFrom(slots,sceneIndex);
  $("canvasLabels").hidden=true;
@@ -466,7 +504,7 @@ async function updateCanvas(){
        "Co-registration accepted · "+quality.featureCount+
        " stable features · RMSE "+quality.rmse.toFixed(2)+
        " px · maximum residual correction "+quality.maxShift.toFixed(1)+
-       " px. Constrained affine transform; relief parallax may remain.",true);
+       " px · "+quality.method+". Relief parallax may remain.",true);
      applyHighlight();
      status("Comparing "+first.date+" → "+second.date+
        " · coordinates aligned with stable visual features. "+
