@@ -232,6 +232,18 @@ function attachDrops(){
    el.addEventListener("drop",e=>assignDrop(e,which));
  }
  const viewport=$("canvasViewport");
+ viewport.addEventListener("click",event=>{
+  if(!highlighted||!activeChange||!loadedPair||$("changeLayer").hidden)return;
+  const bounds=viewport.getBoundingClientRect();
+  if(!bounds.width||!bounds.height)return;
+  const w=loadedPair[0].width,h=loadedPair[0].height;
+  const x=Math.floor((event.clientX-bounds.left)/bounds.width*w);
+  const y=Math.floor((event.clientY-bounds.top)/bounds.height*h);
+  if(x<0||y<0||x>=w||y>=h)return;
+  const id=activeChange.labels[y*w+x];
+  if(id>0&&activeChange.regions.some(region=>region.id===id))
+   selectChangeRegion(activeChange,id,w,h);
+ });
  viewport.addEventListener("dragover",e=>{e.preventDefault();viewport.classList.add("drag-over")});
  viewport.addEventListener("dragleave",()=>viewport.classList.remove("drag-over"));
  viewport.addEventListener("drop",e=>{
