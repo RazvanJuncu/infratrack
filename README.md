@@ -245,3 +245,39 @@ Two explicit, optional evidence checks are available:
 These are **research-stage heuristics**. No ground-truth precision or recall
 is claimed, no AI construction classifier has been trained, and no permanent
 change event or construction progress percentage is inferred.
+
+
+## Region Inspector 1.2 — evidence-led interpretation (experimental)
+Selecting a coherent change region **either directly on highlighted map pixels or
+in the flat region list** now opens a compact inspector explaining what the source
+observations suggest. On the first selection, InfraTrack requests NDVI for the
+exact two scenes once per selected pair. The explanation updates if the true
+B04/B08 reflectance data is accessible; later-date corroboration remains an
+explicit separate action. Explanations preserve the selected region after
+new evidence loads, and preserve a per-pixel contour, not a bounding rectangle.
+
+The inspector distinguishes:
+- **Possible cloud-edge artefact / cloud-shadow influence:** reported only
+  if actual Sentinel-2 L2A Scene Classification Layer (SCL) cloud codes
+  8, 9, 10 or cloud-shadow code 3 occur adjacent to the clear-screened
+  change pixels. SCL-cloud pixels cannot themselves be called ground changes.
+  Missing SCL yields *unavailable*, not a fabricated cloud verdict.
+- **Possible illumination change:** chromaticity-preserving RGB brightness
+  variation, when shadow-like differences are explicitly included.
+- **Possible vegetation growth** or **harvest / vegetation loss:** a
+  sufficiently large measured NDVI increase/decrease. These are vegetation
+  signals; they cannot alone distinguish crops from unmanaged plants, nor
+  harvest from demolition.
+- **Persistent / transient visual signals:** only when an additional later
+  observation is actually cloud screened and geometrically registered.
+- **Possible persistent surface modification:** a provisional hypothesis
+  requiring corroboration in later RGB plus limited measured NDVI variation;
+  industrial groundworks are merely one of multiple explanations.
+
+Each inspector supplies its supporting data, alternate explanations and a
+visible warning. No industrial classification, ML-confidence percentage or
+verified construction claim is generated. These rules are heuristics until
+validated on independent, labeled change/no-change imagery.
+
+Sentinel-2 SCL reference:
+https://documentation.v1.dataspace.copernicus.eu/APIs/SentinelHub/Data/S2L2A.html
