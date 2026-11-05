@@ -184,3 +184,30 @@ unverified, not AI classifications, and can reflect agriculture, seasonality,
 lighting or remaining misregistration. No precision, recall or accuracy claim is
 possible without a separately labeled real-scene benchmark. This release does
 not provide background processing for every personal area.
+
+
+## Common geographic grid / projection fix (2026-11-05)
+Different Sentinel-2 visual COG assets can have different projected source
+CRSs and UTM grid orientations. Sampling each scene's own axis-aligned UTM
+bounding box at the same *output dimensions* is **not** sufficient to make
+their RGB pixels correspond to the same ground coordinates. Such differences
+can look like rotation/shear and trigger an unsafe affine registration.
+
+Monitor now maps every output pixel to the same WGS84 lon/lat coordinate and
+samples the source visual COG into that common grid. Local SCL classification
+is regridded using the same mapping, including when it has a different EPSG.
+The intermediate 512-pixel sampling is only resampling: it **does not** increase
+the source's physical spatial resolution or create real detail.
+
+Two levels of comparison are intentionally separate:
+1. **Geographic-grid swipe:** when source scene crops share identical valid
+   geographic output bounds, the Before/After slider is permitted for
+   **visual inspection** even if residual image-feature registration fails.
+   The UI explicitly marks pixel-level alignment as unverified.
+2. **Change-region analysis:** still requires matching local masks and
+   verified feature-based residual registration; otherwise it remains
+   disabled. Unverified pixels must not be interpreted as ground changes.
+
+This addresses a concrete reprojection design flaw but does not prove the
+accuracy of any real-world scene without verifying original source
+georeferencing and evaluating geographically independent ground truth.
