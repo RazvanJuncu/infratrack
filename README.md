@@ -166,3 +166,21 @@ The browser now retains a local *scene classification* (SCL) clear-pixel mask wi
 The experimental raw RGB threshold overlay uses the *warped-to-reference* newer image, not the unregistered one. It now excludes invalid/cloud/shadowed SCL pixels on **both dates** and excludes uncovered warp-edge pixels. This is still **not** trained AI, certified construction-change segmentation, physical ortho-rectification of elevated objects or a calibrated change probability. Small parallax distortions of tall structures can survive a successful affine registration. The resulting registration confidence is a quality heuristic, not an external geodetic accuracy certification.
 
 Synthetic regression tests cover known pixel translations, small tilt/scale, changed construction-like patches, blank/clouded surfaces, huge shifts, geographically isolated matches, and avoidance of erroneous change highlights. Runtime behavior with specific external Sentinel images remains dependent on usable optical scenes, cloud metadata and original COG services.
+
+
+## Change Intelligence 1.0 — stage 1 (experimental)
+The Monitor now tries a **conservative bidirectional stable-edge translation fallback**
+only when the existing residual affine registration fails. It requires at least
+eight matched features, geographically distributed agreement, reverse matching,
+low residual error, and no more than 5 display pixels of shift. If either method
+cannot establish credible alignment, the original scenes are shown side by side
+and **no** change overlay or event is reported.
+
+For accepted pairs, the browser groups RGB differences into connected candidate
+regions. It uses local cloud masks, limited per-channel illumination offsets, and
+spatial filtering to suppress isolated noise. Region boundaries are **image-pixel**
+coordinates, not surveyed property footprints. The displayed changes are
+unverified, not AI classifications, and can reflect agriculture, seasonality,
+lighting or remaining misregistration. No precision, recall or accuracy claim is
+possible without a separately labeled real-scene benchmark. This release does
+not provide background processing for every personal area.
