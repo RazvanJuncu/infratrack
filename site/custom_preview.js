@@ -37,6 +37,44 @@ function projectedBounds(area,epsg,proj4){
  const xs=corners.map(v=>v[0]),ys=corners.map(v=>v[1]);
  return [Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];
 }
+// Every displayed pixel is indexed by one shared WGS84 lon/lat position.
+// Source COG tiles may use different UTM projections or north-up axes.
+// Reproject to that common grid before any visual residual registration.
+function commonGrid(area,epsg,proj4,outputSize=G.outputSize,sourceSize=G.outputSize*2){
+ if(!Number.isInteger(outputSize)||outputSize<2||outputSize>2048||
+    !Number.isInteger(sourceSize)||sourceSize<outputSize||sourceSize>4096)
+   throw Error("Invalid common geographic grid dimensions");
+ const bbox=projectedBounds(area,epsg,proj4);
+ const [west,south,east,north]=geoBounds(area),code="EPSG:"+epsg;
+ const indices=new Int32Array(outputSize*outputSize).fill(-1);
+ for(let y=0;y<outputSize;y++){
+  const latitude=north-(y+.5)/outputSize*(north-south);
+  for(let x=0;x<outputSize;x++){
+   const longitude=west+(x+.5)/outputSize*(east-west);
+   const projected=proj4("EPSG:4326",code,[longitude,latitude]);
+   if(!Array.isArray(projected)||projected.length<2||
+      !Number.isFinite(projected[0])||!Number.isFinite(projected[1]))
+     throw Error("Common-grid coordinate reprojection failed");
+   const px=Math.floor((projected[0]-bbox[0])/(bbox[2]-bbox[0])*sourceSize);
+   const py=Math.floor((bbox[3]-projected[1])/(bbox[3]-bbox[1])*sourceSize);
+   if(px>=0&&px<sourceSize&&py>=0&&py<sourceSize)
+    indices[y*outputSize+x]=py*sourceSize+px;
+  }
+ }
+ return {bbox,indices,sourceSize,outputSize,epsg,geoBounds:[west,south,east,north]};
+}
+function regridSamples(source,channels,grid){
+ if(!Number.isInteger(channels)||channels<1||channels>4||
+    !source||source.length!==grid.sourceSize*grid.sourceSize*channels)
+  throw Error("Invalid source raster for geographic regridding");
+ const output=new Uint8Array(grid.outputSize*grid.outputSize*channels);
+ for(let p=0;p<grid.indices.length;p++){
+  const q=grid.indices[p];
+  if(q<0)continue; // outside valid source coordinates => missing pixels
+  for(let c=0;c<channels;c++)output[p*channels+c]=source[q*channels+c];
+ }
+ return output;
+}
 function localClear(data){
  const total=data.length;if(!total)return 0;
  let usable=0;
@@ -84,7 +122,8 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
                  im.getGeoKeys?.()?.ProjectedCSTypeGeoKey||
                  im.geoKeys?.ProjectedCSTypeGeoKey);
  if(!isUTM(epsg))throw Error("Unrecognized Sentinel UTM image projection");
- const bbox=projectedBounds(area,epsg,proj4);
+ const visualGrid=commonGrid(area,epsg,proj4);
+ const bbox=visualGrid.bbox;
  pixelWindow(im,bbox);
  if(im.getSamplesPerPixel()<3)throw Error("Original image does not contain three RGB bands");
  let cloudFraction=null,localCheckError=null,cloudMask=null;
@@ -97,12 +136,13 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
        item?.properties?.["proj:epsg"]||
        sclImage.getGeoKeys?.()?.ProjectedCSTypeGeoKey||
        sclImage.geoKeys?.ProjectedCSTypeGeoKey);
-     const sclBounds=projectedBounds(area,sclProjection,proj4);
-     pixelWindow(sclImage,sclBounds);
-     const sample=await sclTiff.readRasters({
-       bbox:sclBounds,width:G.outputSize,height:G.outputSize,samples:[0],interleave:true,
-       resampleMethod:"nearest"
+     const sclGrid=sclProjection===epsg?visualGrid:commonGrid(area,sclProjection,proj4);
+     pixelWindow(sclImage,sclGrid.bbox);
+     const sourceSCL=await sclTiff.readRasters({
+       bbox:sclGrid.bbox,width:sclGrid.sourceSize,height:sclGrid.sourceSize,
+       samples:[0],interleave:true,resampleMethod:"nearest"
      });
+     const sample=regridSamples(sourceSCL,1,sclGrid);
      cloudFraction=localClear(sample);
      cloudMask=new Uint8Array(sample.length);
      for(let i=0;i<sample.length;i++){
@@ -120,10 +160,11 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
    throw Error("Locally cloudy or invalid ("+Math.round(100*(1-cloudFraction))+
        "% unusable pixels); no scene substitution");
  const size=G.outputSize;
- const vals=await tiff.readRasters({
-     bbox,width:size,height:size,samples:[0,1,2],
+ const sourceRGB=await tiff.readRasters({
+     bbox,width:visualGrid.sourceSize,height:visualGrid.sourceSize,samples:[0,1,2],
      interleave:true,resampleMethod:"nearest"
  });
+ const vals=regridSamples(sourceRGB,3,visualGrid);
  if(signal?.aborted)throw Error("Cancelled");
  if(vals.length!==size*size*3)throw Error("Unexpected raster size from source");
  const bytes=new Uint8ClampedArray(size*size*4);
@@ -151,6 +192,7 @@ async function previewOne(item,area,GeoTIFF,proj4,signal,options={}){
    image:canvas.toDataURL("image/png"),
    rgba:bytes,width:size,height:size,cloudMask,
    epsg,sourceAsset:url,
+   gridMode:"WGS84 common-grid",geographicBounds:visualGrid.geoBounds,
    localCheckError,
    warning:cloudFraction===null?
      "Local cloud screening unavailable — scene cloud percentage is not local.":
@@ -251,7 +293,8 @@ async function renderSelected(area,items,options={}) {
 }
 
 const core={G,itemDate,urlAsset,isUTM,UTMDefinition,geoBounds,
-  projectedBounds,localClear,chooseItems,pixelWindow,render,exactSelection,renderSelected};
+  projectedBounds,commonGrid,regridSamples,localClear,chooseItems,pixelWindow,
+  render,exactSelection,renderSelected};
 if(typeof module==="object"&&module.exports)module.exports=core;
 global.InfraCustomPreview=core;
 })(typeof window!=="undefined"?window:globalThis);
