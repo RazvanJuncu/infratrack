@@ -64,6 +64,7 @@ function renderAreas(){
  }
 }
 function dayText(item){return core.sceneDate(item)||"Unknown date"}
+function displayDate(iso){return core.humanDate(iso)||iso||"Unknown date"}
 function cloudText(item){
  const cloud=core.sceneCloud(item);
  return cloud===null?"Unknown cloud cover":Math.round(cloud)+"% clouds · whole scene";
@@ -112,7 +113,7 @@ function setSlotContent(which,id){
    return;
  }
  const handle=node("div",undefined,"handle");
- handle.append(node("strong",title+" · "+dayText(item)));
+ handle.append(node("strong",title+" · "+displayDate(dayText(item))));
  handle.append(node("small",cloudText(item)+" · drag to remove"));
  handle.title="Drag this image to the remove area at the end of the timeline";
  handle.draggable=true;
@@ -139,7 +140,20 @@ function renderTimeline(){
   box.append(node("p","No source acquisitions in this date window. Try a longer range.","muted small"));
   return;
  }
+ let lastYear=null,lastMonth=null;
  for(const scene of scenes){
+  const group=core.timelineGroup(dayText(scene));
+  if(group&&group.year!==lastYear){
+   const year=node("div",group.year,"timeline-year");
+   year.setAttribute("role","separator");year.setAttribute("aria-label","Year "+group.year);
+   box.append(year);lastYear=group.year;lastMonth=null;
+  }
+  if(group&&group.month!==lastMonth){
+   const month=node("div",group.monthName,"timeline-month");
+   month.setAttribute("role","separator");
+   month.setAttribute("aria-label",group.monthName+" "+group.year);
+   box.append(month);lastMonth=group.month;
+  }
   const chosen=selectedIds().includes(scene.id);
   const card=node("button",undefined,"scene-card"+(chosen?" chosen":""));
   card.type="button";card.draggable=true;
@@ -158,9 +172,15 @@ function renderTimeline(){
     t.loading="lazy";
     card.append(t);
   }
-  card.append(node("div",dayText(scene),"day"));
-  const cloud=node("div",cloudText(scene),"cloud");
-  if(core.sceneCloud(scene)>=70)cloud.classList.add("bad");
+  card.append(node("div",displayDate(dayText(scene)),"day"));
+  const coverage=core.sceneCloud(scene);
+  const cloud=node("div",undefined,"cloud scene-cloud");
+  if(coverage!==null&&coverage>=70)cloud.classList.add("bad");
+  cloud.title=cloudText(scene);
+  cloud.setAttribute("aria-label",cloudText(scene));
+  const symbol=node("span","☁","scene-cloud-icon");
+  symbol.setAttribute("aria-hidden","true");
+  cloud.append(symbol,node("span",coverage===null?"—":Math.round(coverage)+"%","scene-cloud-value"));
   card.append(cloud);
   if(!sceneUrl(scene))card.append(node("div","RGB image asset missing","role"));
   if(chosen)card.append(node("div",core.pairFrom(slots,sceneIndex).findIndex(s=>s.id===scene.id)===0?
@@ -596,8 +616,8 @@ function showGeographicPair(first,second,reason){
  loadedPair=null;resetChangeRegions();
  $("canvasOld").src=first.image;$("canvasOld").hidden=false;
  $("canvasNew").src=second.image;$("canvasNew").hidden=false;
- $("labelOld").textContent="BEFORE · "+first.date;
- $("labelNew").textContent="AFTER · "+second.date;
+ $("labelOld").textContent="BEFORE · "+displayDate(first.date);
+ $("labelNew").textContent="AFTER · "+displayDate(second.date);
  $("canvasLabels").hidden=false;
  $("canvasDivider").hidden=false;
  $("compareControls").hidden=false;
@@ -618,8 +638,8 @@ function showUnregisteredPair(first,second,reason){
  $("highlightBtn").disabled=true;
  $("unregisteredBefore").src=first.image;
  $("unregisteredAfter").src=second.image;
- $("unregisteredBeforeDate").textContent="BEFORE · "+first.date;
- $("unregisteredAfterDate").textContent="AFTER · "+second.date;
+ $("unregisteredBeforeDate").textContent="BEFORE · "+displayDate(first.date);
+ $("unregisteredAfterDate").textContent="AFTER · "+displayDate(second.date);
  $("unregisteredPair").hidden=false;
  alignmentMessage("Alignment not verified: "+reason+
   ". Images are shown separately. Overlay and change detection are disabled.");
@@ -678,8 +698,8 @@ async function updateCanvas(){
      const quality=aligned.quality;
      $("canvasNew").src=aligned.newest.image;
      $("canvasNew").hidden=false;
-     $("labelOld").textContent="BEFORE · "+first.date;
-     $("labelNew").textContent="AFTER · "+second.date;
+     $("labelOld").textContent="BEFORE · "+displayDate(first.date);
+     $("labelNew").textContent="AFTER · "+displayDate(second.date);
      $("canvasDivider").hidden=false;
      $("compareControls").hidden=false;
      clip(50);
