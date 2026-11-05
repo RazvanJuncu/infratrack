@@ -406,6 +406,8 @@ async function alignScenes(first,second){
  if(first.width!==second.width||first.height!==second.height)
    throw Error("Source rasters are not on the same-sized geographic grid");
  const w=first.width,h=first.height;
+ if(!sameGeographicGrid(first,second))
+   throw Error("Source scenes lack a shared geographic pixel grid");
  if(!first.cloudMask||!second.cloudMask||
     first.cloudMask.length!==w*h||second.cloudMask.length!==w*h)
    throw Error("Sentinel local cloud masks are unavailable: alignment cannot be verified");
@@ -415,8 +417,9 @@ async function alignScenes(first,second){
  ]);
  const result=registrationV2.estimateRegistration(
    a,b,w,h,first.cloudMask,second.cloudMask);
- if(!result.ok)throw Error(result.reason||
-   "Not enough persistent stable landmarks to estimate a safe transform");
+ if(!result.ok)throw Error((result.reason||
+   "Not enough persistent stable landmarks to estimate a safe transform")+
+   (result.fallbackReason?" · Edge fallback: "+result.fallbackReason:""));
  const warp=registrar.warpRGBA(b,w,h,result,second.cloudMask);
  return {
    old:{...first,rgba:a},
@@ -424,6 +427,34 @@ async function alignScenes(first,second){
        image:encodeRGBA(warp.rgba,w,h)},
    quality:result
  };
+}
+function sameGeographicGrid(a,b){
+ return a?.gridMode==="WGS84 common-grid"&&b?.gridMode==="WGS84 common-grid"&&
+  a.width===b.width&&a.height===b.height&&
+  Array.isArray(a.geographicBounds)&&Array.isArray(b.geographicBounds)&&
+  a.geographicBounds.length===4&&b.geographicBounds.length===4&&
+  a.geographicBounds.every((v,i)=>Number.isFinite(v)&&
+   Number.isFinite(b.geographicBounds[i])&&
+   Math.abs(v-b.geographicBounds[i])<1e-10);
+}
+// Geographic regridding permits visual swipe, never unverified change events.
+function showGeographicPair(first,second,reason){
+ loadedPair=null;resetChangeRegions();
+ $("canvasOld").src=first.image;$("canvasOld").hidden=false;
+ $("canvasNew").src=second.image;$("canvasNew").hidden=false;
+ $("labelOld").textContent="BEFORE · "+first.date;
+ $("labelNew").textContent="AFTER · "+second.date;
+ $("canvasLabels").hidden=false;
+ $("canvasDivider").hidden=false;
+ $("compareControls").hidden=false;
+ $("unregisteredPair").hidden=true;
+ $("changeLayer").hidden=true;
+ $("highlightBtn").disabled=true;
+ clip(50);
+ alignmentMessage("Geographic-grid visual swipe only · residual pixel alignment unverified: "+
+  reason+". Change detection is disabled.");
+ $("changeSummary").textContent=
+  "Shared geographic grid, but pixel-level alignment was not verified. No change regions are inferred.";
 }
 function showUnregisteredPair(first,second,reason){
  loadedPair=null;resetChangeRegions();
@@ -511,9 +542,16 @@ async function updateCanvas(){
        ([first.warning,second.warning].filter(Boolean).join("; ")));
    }catch(err){
      if(token.aborted||request!==viewSeq)return;
-     showUnregisteredPair(first,second,err?.message||"Unknown geometric alignment failure");
-     status("Cannot safely overlay "+first.date+" and "+second.date+
-       "; no false differences will be highlighted.");
+     const reason=err?.message||"Unknown geometric alignment failure";
+     if(sameGeographicGrid(first,second)){
+       showGeographicPair(first,second,reason);
+       status("Geographic-grid swipe "+first.date+" → "+second.date+
+         " · pixel alignment not verified; change analysis disabled.");
+     }else{
+       showUnregisteredPair(first,second,reason);
+       status("Cannot safely overlay "+first.date+" and "+second.date+
+         " · source georeferencing not verified.");
+     }
    }
  }else{
    loadedPair=null;
