@@ -93,7 +93,7 @@ test('Canvas hides the overlay and disables change detection if geometric regist
  assert.match(html,/id="alignmentState"/);
  assert.match(html,/src="image_registration.js"/);
  assert.match(js,/showUnregisteredPair\(first,second/);
- assert.match(js,/core\.rgbDifference\([\s\S]*?before\.cloudMask,after\.cloudMask/);
+ assert.match(js,/changeEngine\.segment\([\s\S]*?before\.cloudMask,after\.cloudMask/);
  assert.match(js,/registrationV2\.estimateRegistration\(/);
  assert.match(js,/registrar\.warpRGBA\(/);
 });
