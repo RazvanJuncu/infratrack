@@ -67,7 +67,8 @@ function regridSamples(source,channels,grid){
  if(!Number.isInteger(channels)||channels<1||channels>4||
     !source||source.length!==grid.sourceSize*grid.sourceSize*channels)
   throw Error("Invalid source raster for geographic regridding");
- const output=new Uint8Array(grid.outputSize*grid.outputSize*channels);
+ // Preserve the original COG numeric type (e.g. uint16 reflectance).
+ const output=new source.constructor(grid.outputSize*grid.outputSize*channels);
  for(let p=0;p<grid.indices.length;p++){
   const q=grid.indices[p];
   if(q<0)continue; // outside valid source coordinates => missing pixels
@@ -238,6 +239,52 @@ async function render(area,items,options={}){
        "Locally cloud-check could not be completed for both dates; interpret cautiously.":
        "Both image crops passed local Sentinel scene-classification screening."};
 }
+// Read genuine reflectance rasters only when the user requests NDVI.
+// STAC raster:bands scale/offset are scene-specific; do not use the RGB JPEG values.
+async function readNDVI(item,area,options={}){
+ if(!global.GeoTIFF||!global.proj4)throw Error("Spectral viewer dependencies unavailable");
+ const signal=options.signal,GeoTIFF=global.GeoTIFF,proj4=global.proj4;
+ const keys=["red","nir"],bands=[];
+ for(const key of keys){
+  if(signal?.aborted)throw Error("Cancelled");
+  const asset=item?.assets?.[key],url=urlAsset(item,key);
+  if(!url)throw Error("Sentinel-2 "+key+" reflectance asset unavailable");
+  const meta=asset?.["raster:bands"]?.[0];
+  const scale=Number(meta?.scale),offset=Number(meta?.offset??0);
+  if(!Number.isFinite(scale)||scale<=0||!Number.isFinite(offset))
+   throw Error("Unverified scale/offset metadata for "+key+" band");
+  const tiff=await GeoTIFF.fromUrl(url);
+  const image=await tiff.getImage(0);
+  const epsg=Number(asset?.["proj:epsg"]||item?.properties?.["proj:epsg"]||
+   image.getGeoKeys?.()?.ProjectedCSTypeGeoKey||image.geoKeys?.ProjectedCSTypeGeoKey);
+  if(!isUTM(epsg))throw Error("Spectral band has unsupported projection");
+  const grid=commonGrid(area,epsg,proj4);
+  pixelWindow(image,grid.bbox);
+  const raw=await tiff.readRasters({bbox:grid.bbox,
+   width:grid.sourceSize,height:grid.sourceSize,
+   samples:[0],interleave:true,resampleMethod:"nearest"});
+  if(signal?.aborted)throw Error("Cancelled");
+  const mapped=regridSamples(raw,1,grid);
+  bands.push({key,values:mapped,scale,offset});
+ }
+ const n=G.outputSize*G.outputSize;
+ const ndvi=new Float32Array(n).fill(NaN);
+ let valid=0;
+ for(let p=0;p<n;p++){
+  const rr=bands[0].values[p],nn=bands[1].values[p];
+  if(!(rr>0&&nn>0))continue; // source no-data is zero
+  const red=rr*bands[0].scale+bands[0].offset;
+  const nir=nn*bands[1].scale+bands[1].offset;
+  if(!(red>0&&nir>0))continue;
+  const value=(nir-red)/(nir+red);
+  if(!Number.isFinite(value))continue;
+  ndvi[p]=Math.max(-1,Math.min(1,value));valid++;
+ }
+ if(valid<n*.2)throw Error("Insufficient valid reflectance pixels for NDVI");
+ return {ndvi,valid,width:G.outputSize,height:G.outputSize,
+  source:"Sentinel-2 B04/B08; STAC reflectance scale/offset",
+  date:itemDate(item),sceneId:item.id};
+}
 // Explicit scene selection does not substitute another date or scene ID.
 // The exact STAC item behind each selected acquisition card is rendered.
 function exactSelection(items) {
@@ -293,7 +340,7 @@ async function renderSelected(area,items,options={}) {
 }
 
 const core={G,itemDate,urlAsset,isUTM,UTMDefinition,geoBounds,
-  projectedBounds,commonGrid,regridSamples,localClear,chooseItems,pixelWindow,
+  projectedBounds,commonGrid,regridSamples,readNDVI,localClear,chooseItems,pixelWindow,
   render,exactSelection,renderSelected};
 if(typeof module==="object"&&module.exports)module.exports=core;
 global.InfraCustomPreview=core;
