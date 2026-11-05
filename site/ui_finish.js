@@ -52,7 +52,7 @@ function insertToggle(){
  render();
 }
 const current=readFinish(root.localStorage);
-document.documentElement.setAttribute(ATTRIBUTE,current);
+if(typeof document!=="undefined")document.documentElement.setAttribute(ATTRIBUTE,current);
 if(typeof module==="object"&&module.exports)
  module.exports={KEY,readFinish,setFinish,labelFor};
 if(typeof document!=="undefined"){
