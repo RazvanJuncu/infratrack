@@ -74,7 +74,7 @@ test('NDVI reads B04/B08 reflectance scale and offset from STAC',async()=>{
  // Regression on actual reflectance arithmetic: red=0.2, nir=0.4.
  const red=3000*.0001-.1,nir=5000*.0001-.1;
  assert.ok(Math.abs((nir-red)/(nir+red)-1/3)<1e-10);
- const page=fs.readFileSync(path.resolve(__dirname,'../site/index.html'),'utf8');
+ const page=fs.readFileSync(path.resolve(__dirname,'../site/monitor.html'),'utf8');
  assert.match(page,/id="inspectNDVI"/);
  assert.match(page,/id="checkPersistence"/);
  assert.match(page,/id="shadowToggle"/);

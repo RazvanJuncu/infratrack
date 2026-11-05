@@ -69,7 +69,7 @@ test('selected dated scene is not silently changed for preview',()=>{
  assert.deepEqual(list.map(x=>x.id),['older','newer']);
 });
 test('UI references exist in v0.9 HTML',()=>{
- const html=fs.readFileSync(path.resolve(__dirname,'../site/index.html'),'utf8');
+ const html=fs.readFileSync(path.resolve(__dirname,'../site/monitor.html'),'utf8');
  const js=fs.readFileSync(path.resolve(__dirname,'../site/monitor_workspace.js'),'utf8');
  const ids=new Set([...html.matchAll(/id="([^"]+)"/g)].map(x=>x[1]));
  const refs=[...js.matchAll(/\$\("([^"]+)"\)/g)].map(x=>x[1]);

@@ -73,7 +73,7 @@ test('missing raw SCL never gets a false cloud classification',()=>{
  assert.equal(d.hypothesis,'Unclassified visual change');
 });
 test('monitor exposes selection from both canvas and list, with one NDVI on-demand request',()=>{
- const html=fs.readFileSync(path.resolve(__dirname,'../site/index.html'),'utf8');
+ const html=fs.readFileSync(path.resolve(__dirname,'../site/monitor.html'),'utf8');
  const js=fs.readFileSync(path.resolve(__dirname,'../site/monitor_workspace.js'),'utf8');
  assert.match(html,/src="region_inspector.js"/);
  for(const id of ['regionInspector','regionInspectorIndex','regionInspectorHypothesis',

@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const site=p=>fs.readFileSync(path.join(__dirname,'..','site',p),'utf8');
-const routes=['index.html','training.html','technical.html'];
+const routes=['index.html','monitor.html','training.html','technical.html'];
 
 test('all active experiences share the same identity system without renaming unapproved production brand',()=>{
  const css=site('brand.css');
@@ -50,7 +50,7 @@ test('Brand Lab previews naming concepts but does not modify production names or
 });
 
 test('active application controls and source-script references are unchanged',()=>{
- const monitor=site('index.html');
+ const monitor=site('monitor.html');
  for(const id of ['canvasViewport','canvasOld','canvasNew','timelineScroll',
     'compareRange','highlightBtn','latestButton','slotBefore','slotAfter']){
    assert.ok(monitor.includes('id="'+id+'"'),id);

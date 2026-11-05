@@ -87,7 +87,7 @@ test('highlight excludes cloudy source pixels and unobserved warped boundaries',
 test('Canvas hides the overlay and disables change detection if geometric registration fails',()=>{
  const fs=require('node:fs');
  const path=require('node:path');
- const html=fs.readFileSync(path.resolve(__dirname,'../site/index.html'),'utf8');
+ const html=fs.readFileSync(path.resolve(__dirname,'../site/monitor.html'),'utf8');
  const js=fs.readFileSync(path.resolve(__dirname,'../site/monitor_workspace.js'),'utf8');
  assert.match(html,/id="unregisteredPair"/);
  assert.match(html,/id="alignmentState"/);

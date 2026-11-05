@@ -44,7 +44,7 @@ test('rigid fallback rejects excessive shifts and confined features',()=>{
  assert.equal(reg.rigidConsensus(p.map(q=>({...q,x:120+q.x/40,y:120+q.y/40})),256,256).ok,false);
 });
 test('Monitor has new engines and retains fail-closed behavior',()=>{
- const html=fs.readFileSync(path.resolve(__dirname,'../site/index.html'),'utf8');
+ const html=fs.readFileSync(path.resolve(__dirname,'../site/monitor.html'),'utf8');
  const js=fs.readFileSync(path.resolve(__dirname,'../site/monitor_workspace.js'),'utf8');
  assert.match(html,/src="registration_v2.js"/);
  assert.match(html,/src="change_intelligence.js"/);
