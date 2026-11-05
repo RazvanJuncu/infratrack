@@ -9,7 +9,8 @@ const preview=global.InfraCustomPreview;
 const registrar=global.InfraImageRegistration;
 const registrationV2=global.InfraRegistrationV2;
 const changeEngine=global.InfraChangeIntelligence;
-if(!registrationV2||!changeEngine)throw Error("Change Intelligence modules missing");
+const regionInspectorEngine=global.InfraRegionInspector;
+if(!registrationV2||!changeEngine||!regionInspectorEngine)throw Error("Change Intelligence modules missing");
 if(!core)throw Error("InfraTrack workspace core missing");
 const $=id=>document.getElementById(id);
 const STAC="https://earth-search.aws.element84.com/v1/search";
@@ -23,6 +24,7 @@ let chosenMapPoint=null,leafletMap=null,leafletRect=null;
 let catalogSeq=0,viewSeq=0,activeToken=null;
 let highlighted=false,loadedPair=null,latestBusy=false,highlightRevision=0;
 let shadowIncluded=false,activeChange=null,ndviEvidence=null,laterEvidence=null,laterDate=null;
+let selectedRegionId=null,autoNDVIRequested=false;
 let lastTap=null;
 function status(message){$("canvasStatus").textContent=message}
 function alignmentMessage(text,accepted=false){
@@ -322,6 +324,9 @@ function decodePreviewPixels(dataUrl,width,height){
 }
 function resetChangeRegions(){
  activeChange=null;ndviEvidence=null;laterEvidence=null;laterDate=null;
+ selectedRegionId=null;autoNDVIRequested=false;
+ $("regionInspector").hidden=true;
+ $("canvasViewport").removeAttribute("data-region-inspection");
  $("changeEvents").hidden=true;
  $("changeEventsList").replaceChildren();
  $("regionFocus").hidden=true;
@@ -520,10 +525,17 @@ async function alignScenes(first,second){
    "Not enough persistent stable landmarks to estimate a safe transform")+
    (result.fallbackReason?" · Edge fallback: "+result.fallbackReason:""));
  const warp=registrar.warpRGBA(b,w,h,result,second.cloudMask);
+ let warpedSCL=null;
+ if(second.sclClasses?.length===w*h){
+  const sampled=changeEngine.warpScalar(Float32Array.from(second.sclClasses),w,h,result);
+  warpedSCL=new Uint8Array(w*h);
+  for(let p=0;p<sampled.length;p++)
+   warpedSCL[p]=Number.isFinite(sampled[p])?Math.max(0,Math.min(255,Math.round(sampled[p]))):0;
+ }
  return {
    old:{...first,rgba:a},
    newest:{...second,rgba:warp.rgba,cloudMask:warp.mask,
-       image:encodeRGBA(warp.rgba,w,h),registration:result},
+       sclClasses:warpedSCL,image:encodeRGBA(warp.rgba,w,h),registration:result},
    quality:result
  };
 }
