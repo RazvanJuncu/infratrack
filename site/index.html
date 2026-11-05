@@ -20,6 +20,20 @@
 <main id="overviewRoot">
 <div id="overviewMap" aria-label="Interactive aerial map of monitored areas" role="application"></div>
 <div class="map-fade" aria-hidden="true"></div>
+<svg id="areaExtraction" class="area-extraction" aria-hidden="true" focusable="false" preserveAspectRatio="none" viewBox="0 0 1 1">
+ <defs>
+  <linearGradient id="extractionGradient" x1="0%" y1="50%" x2="100%" y2="50%">
+   <stop offset="0%" stop-color="#D49A58" stop-opacity=".075"/>
+   <stop offset="68%" stop-color="#E2B178" stop-opacity=".027"/>
+   <stop offset="100%" stop-color="#F0C58A" stop-opacity=".14"/>
+  </linearGradient>
+ </defs>
+ <path id="extractionBeam" class="extraction-beam" fill="url(#extractionGradient)"/>
+ <path id="extractionTop" class="extraction-edge"/>
+ <path id="extractionBottom" class="extraction-edge"/>
+ <path id="extractionSource" class="extraction-source"/>
+ <path id="extractionTarget" class="extraction-target"/>
+</svg>
 <section class="overview-tools" aria-label="Map controls">
  <button id="fitAll" type="button" title="Show every monitored area"><span aria-hidden="true">⌖</span> All areas</button>
  <button id="basemapToggle" type="button" aria-label="Switch from satellite imagery to street map">Map</button>
@@ -76,6 +90,7 @@
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
 <script src="monitor_workspace_core.js"></script>
 <script src="custom_preview.js"></script>
+<script src="extraction_link.js"></script>
 <script src="overview.js"></script>
 </body>
 </html>
