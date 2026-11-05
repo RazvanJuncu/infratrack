@@ -1,3 +1,4 @@
+[hidden]{display:none!important}
 /* InfraTrack / map-first overview / Carbon–Sand
    Map is the product canvas: flat surfaces, few panels and compact controls. */
 body.overview-page{margin:0;height:100dvh;min-height:500px;overflow:hidden;background:#15191C}
